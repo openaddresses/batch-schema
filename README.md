@@ -13,7 +13,7 @@ npm add @openaddresses/batch-schema
 ```js
 const path = require('path');
 const express = require('express');
-const Schema = require('@openaddresses/batch-schema');
+const { Schema } = require('@openaddresses/batch-schema');
 
 const schema = new Schema({
     router: express.Router(),

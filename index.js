@@ -1,1 +1,4 @@
-module.exports = require('./lib/schema');
+module.exports = {
+    Schema: require('./lib/schema'),
+    Err: require('./lib/error')
+}
