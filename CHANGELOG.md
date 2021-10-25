@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v1.0.1
+
+- :bug: Check for schema in library before looking for schema in calling project
+
 ### v1.0.0
 
 - :rocket: Intial Release
