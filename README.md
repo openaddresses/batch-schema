@@ -15,9 +15,12 @@ const path = require('path');
 const express = require('express');
 const { Schema } = require('@openaddresses/batch-schema');
 
+const app = express();
 const schema = new Schema(express.Router(), {
     schemas: path.resolve(__dirname, 'schemas')
 });
+
+app.use('/api', schema.router);
 
 server();
 
@@ -46,5 +49,4 @@ const schema = new Schema(<router>, <opts>);
 | `router`          | Instantiated Express router to bind to |
 | `opts`            | Optional Opts Object |
 | `opts.schemas`    | Directory of named schemas |
-| `opts.api`        | [default=false] Enable `GET /schema` on router which allows clients to retrieve schemas |
 
