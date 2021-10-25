@@ -8,7 +8,8 @@
     "license": "MIT",
     "private": false,
     "scripts": {
-        "lint": "eslint index.js lib/**.js"
+        "test": "tape test/**.test.js",
+        "lint": "eslint index.js lib/**.js routes/**.js schemas/**.json"
     },
     "dependencies": {
         "ajv": "^8.6.3",

@@ -46,3 +46,5 @@ const schema = new Schema(<router>, <opts>);
 | `router`          | Instantiated Express router to bind to |
 | `opts`            | Optional Opts Object |
 | `opts.schemas`    | Directory of named schemas |
+| `opts.api`        | [default=false] Enable `GET /schema` on router which allows clients to retrieve schemas |
+
