@@ -9,7 +9,7 @@
     "private": false,
     "scripts": {
         "test": "tape test/**.test.js",
-        "lint": "eslint index.js lib/**.js routes/**.js schemas/**.json"
+        "lint": "eslint index.js lib/**.js routes/**.js test/**.js"
     },
     "dependencies": {
         "ajv": "^8.6.3",
