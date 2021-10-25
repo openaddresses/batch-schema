@@ -15,8 +15,7 @@ const path = require('path');
 const express = require('express');
 const { Schema } = require('@openaddresses/batch-schema');
 
-const schema = new Schema({
-    router: express.Router(),
+const schema = new Schema(express.Router(), {
     schemas: path.resolve(__dirname, 'schemas')
 });
 
@@ -37,7 +36,13 @@ async function server() {
 }
 ```
 
-| Config Option | Notes |
-| ------------- | ----- |
-| `router`      | Express router to bind to |
-| `schemas`     | Directory of named schemas |
+```js
+const schema = new Schema(<router>, <opts>);
+
+```
+
+| Config Option     | Notes |
+| ----------------- | ----- |
+| `router`          | Instantiated Express router to bind to |
+| `opts`            | Optional Opts Object |
+| `opts.schemas`    | Directory of named schemas |
