@@ -37,6 +37,9 @@ async function server() {
         });
     });
 }
+
+// Handle Validation Errors => JSON Middleware
+schema.error();
 ```
 
 ```js

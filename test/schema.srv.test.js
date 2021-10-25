@@ -15,6 +15,7 @@ let server = false;
 test('start', (t) => {
     server = app.listen(2000, async (err) => {
         await schema.api();
+        schema.error();
 
         t.error(err, 'no errors');
         t.end();
@@ -23,7 +24,9 @@ test('start', (t) => {
 
 test('GET: api/schema', async (t) => {
     try {
-        const res = await got('http://localhost:2000/api/schema').json();
+        const res = await got('http://localhost:2000/api/schema', {
+            validateStatus: false
+        }).json();
 
         t.deepEquals(res, {
             'GET /schema':{
@@ -41,76 +44,56 @@ test('GET: api/schema', async (t) => {
 
 test('GET: api/schema?method=FAKE', async (t) => {
     try {
-        const res = await got('http://localhost:2000/api/schema?method=fake').json();
-
-        t.deepEquals(res, {
+        await got('http://localhost:2000/api/schema?method=fake');
+        t.fail('4xx status code should throw');
+    } catch (err) {
+        t.deepEquals(JSON.parse(err.response.body), {
             status: 400,
             message: 'validation error',
             messages: [{
                 message: 'should be equal to one of the allowed values'
             }]
         });
-    } catch (err) {
-        t.error(err, 'no error');
     }
 
     t.end();
 });
 
-test.skip('GET: api/schema?method=GET', async (t) => {
+test('GET: api/schema?method=GET', async (t) => {
     try {
-        const res = await flight.request({
-            url: '/api/schema?method=GET',
-            method: 'GET',
-            json: true
-        }, false);
-
-        t.equals(res.statusCode, 400, 'http: 400');
-        t.deepEquals(res.body, {
+        await got('http://localhost:2000/api/schema?method=GET');
+        t.fail('4xx status code should throw');
+    } catch (err) {
+        t.deepEquals(JSON.parse(err.response.body), {
             status: 400,
             message: 'url & method params must be used together',
             messages: []
         });
-
-    } catch (err) {
-        t.error(err, 'no error');
     }
 
     t.end();
 });
-
-test.skip('GET: api/schema?url=123', async (t) => {
+test('GET: api/schema?url=123', async (t) => {
     try {
-        const res = await flight.request({
-            url: '/api/schema?url=123',
-            method: 'GET',
-            json: true
-        }, false);
-
-        t.equals(res.statusCode, 400, 'http: 400');
-        t.deepEquals(res.body, {
+        await got('http://localhost:2000/api/schema?url=123');
+        t.fail('4xx status code should throw');
+    } catch (err) {
+        t.deepEquals(JSON.parse(err.response.body), {
             status: 400,
             message: 'url & method params must be used together',
             messages: []
         });
-    } catch (err) {
-        t.error(err, 'no error');
     }
 
     t.end();
 });
 
-test.skip('GET: api/schema?method=POST&url=/login', async (t) => {
+test('GET: api/schema?method=GET&url=/schema', async (t) => {
     try {
-        const res = await flight.request({
-            url: '/api/schema?method=POST&url=/login',
-            method: 'GET',
-            json: true
-        }, t);
+        const res = await got('http://localhost:2000/api/schema?method=GET&url=/schema');
 
         t.equals(res.statusCode, 200, 'http: 200');
-        t.deepEquals(res.body, {
-        });
+        t.deepEquals(Object.keys(JSON.parse(res.body)).sort(), ['query', 'body', 'res'].sort());
 
     } catch (err) {
         t.error(err, 'no error');
