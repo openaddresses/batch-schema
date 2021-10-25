@@ -1,0 +1,24 @@
+{
+    "name": "@openaddresses/batch-schema",
+    "root": true,
+    "version": "1.0.0",
+    "description": "Strongly Validated JSON Schema support for address",
+    "repository": "git@github.com:openaddresses/batch",
+    "author": "ingalls <nick@ingalls.ca>",
+    "license": "MIT",
+    "private": false,
+    "scripts": {
+        "lint": "eslint index.js lib/**.js"
+    },
+    "dependencies": {
+        "request": "^2.88.2"
+    },
+    "devDependencies": {
+        "eslint": "^8.0.1",
+        "eslint-plugin-node": "^11.0.0",
+        "@babel/eslint-parser": "^7.15.7",
+        "@babel/eslint-plugin": "^7.14.5",
+        "@babel/plugin-syntax-class-properties": "^7.12.13",
+        "@babel/preset-env": "^7.15.6"
+    }
+}
