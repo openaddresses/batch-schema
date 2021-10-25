@@ -10,7 +10,7 @@ const ajv = new Ajv({
     allErrors: true
 });
 
-glob.sync(path.resolve(__dirname, '../schema/**/*.json')).forEach((source) => {
+glob.sync(path.resolve(__dirname, '../schemas/**/*.json')).forEach((source) => {
     test(`schema/${path.parse(source).base}`, async (t) => {
         try {
             const file = fs.readFileSync(source);
