@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v2.0.0
+
+- :tada: Add support for populating `default` keys in schema
+- :arrow_up: General Dep Update
+
 ### v1.0.1
 
 - :bug: Check for schema in library before looking for schema in calling project
