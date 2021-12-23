@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.1.0
+
+- :tada: Add more detailed schema error messages
+
 ### v2.0.0
 
 - :tada: Add support for populating `default` keys in schema
