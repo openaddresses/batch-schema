@@ -1,7 +1,7 @@
 {
     "name": "@openaddresses/batch-schema",
     "root": true,
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Strongly Validated JSON Schema support for address",
     "repository": "git@github.com:openaddresses/batch",
     "author": "ingalls <nick@ingalls.ca>",
