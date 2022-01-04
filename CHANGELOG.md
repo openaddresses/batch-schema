@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.2.0
+
+- :tada: Add support for errors with `status` set from external libraries (IE OpenAddresses/tilebase)
+
 ### v2.1.0
 
 - :tada: Add more detailed schema error messages
