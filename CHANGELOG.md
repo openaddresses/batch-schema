@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.3.0
+
+- :rocket: Remove babel in favour of ESLint's new ECMA13 support
+
 ### v2.2.0
 
 - :tada: Add support for errors with `status` set from external libraries (IE OpenAddresses/tilebase)
