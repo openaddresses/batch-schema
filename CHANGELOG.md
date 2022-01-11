@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.3.1
+
+- :arrow_up: Update Base Deps
+
 ### v2.3.0
 
 - :rocket: Remove babel in favour of ESLint's new ECMA13 support
