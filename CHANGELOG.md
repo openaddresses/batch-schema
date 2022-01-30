@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v2.3.2
+
+- :bug: Fix a status code error handling bug which would crash express
+- :arrow_Up: Update Base Deps
+
 ### v2.3.1
 
 - :rocket: Name exports explicitly instead of returning object for ES module compat.
