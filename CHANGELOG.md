@@ -12,6 +12,10 @@
 
 ### v2.3.1
 
+- :rocket: Name exports explicitly instead of returning object for ES module compat.
+
+### v2.3.1
+
 - :arrow_up: Update Base Deps
 
 ### v2.3.0
