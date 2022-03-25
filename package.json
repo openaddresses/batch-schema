@@ -3,7 +3,7 @@
     "root": true,
     "version": "2.3.3",
     "description": "Strongly Validated JSON Schema support for address",
-    "repository": "git@github.com:openaddresses/batch",
+    "repository": "git@github.com:openaddresses/batch-schema",
     "author": "ingalls <nick@ingalls.ca>",
     "license": "MIT",
     "private": false,
