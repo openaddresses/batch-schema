@@ -5,7 +5,7 @@
 ## Installation
 
 ```sh
-npm add @openaddresses/batch-schema
+yarn add @openaddresses/batch-schema
 ```
 
 ## Example Usage
