@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.3.4
+
+- :arrow_up: Update base deps
+
 ### v2.3.3
 
 - :rocket: Name exports explicitly instead of returning object for ES module compat.
