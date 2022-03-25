@@ -8,6 +8,12 @@
 yarn add @openaddresses/batch-schema
 ```
 
+or
+
+```sh
+npm i @openaddresses/batch-schema
+```
+
 ## Example Usage
 
 ```js
