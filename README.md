@@ -43,6 +43,9 @@ async function server() {
         });
     });
 
+    // Handle Unmatched Routes
+    schema.not_found();
+
     // Handle Validation Errors => JSON Middleware
     schema.error();
 }
@@ -71,6 +74,15 @@ await schema.api()
 Adds a route called `GET /schema` which allows the caller to get a list of endpoints that the router manages
 as well as full schema details for every route. If your API is public we recommend enabling this feature, however
 if you do not wish for API routes to be published, this feature is disabled unless called.
+
+### schema.not_found
+
+Adds a middlware which will catch all routes that have not been defined and return
+a standard error object.
+
+```
+schema.not_found()
+```
 
 ### schema.error
 
