@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.4.0
+
+- :tada: Add `schema.not_found()`
+
 ### v2.3.4
 
 - :arrow_up: Update base deps
