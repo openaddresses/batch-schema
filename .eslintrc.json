@@ -8,7 +8,8 @@
         "Map": true
     },
     "parserOptions": {
-        "ecmaVersion": 13
+        "ecmaVersion": 13,
+        "sourceType": "module"
     },
     "plugins": [ "node" ],
     "rules": {
@@ -39,7 +40,6 @@
         "template-curly-spacing": [ "error", "never" ],
         "semi-spacing": "error",
         "strict": "error",
-        "node/no-unsupported-features": [ "error", { "version": 8 } ],
         "node/no-missing-require": "error",
         "valid-jsdoc": ["error", {
             "requireParamDescription": false,
