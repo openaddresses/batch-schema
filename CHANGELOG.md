@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.1.2
+
+- :bug: Internal schema path
+
 ### v3.1.1
 
 - :bug: Internal schema path
