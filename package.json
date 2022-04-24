@@ -2,6 +2,7 @@
     "name": "@openaddresses/batch-schema",
     "type": "module",
     "root": true,
+    "main": "index.js",
     "version": "3.0.0",
     "description": "Strongly Validated JSON Schema support for address",
     "repository": "git@github.com:openaddresses/batch-schema",
