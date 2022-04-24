@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.0.1
+
+- :rocket: Add `.main` property to package.json
+
 ### v3.0.0
 
 - :rocket: Update to ES Module System
