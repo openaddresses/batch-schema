@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.0.0
+
+- :rocket: Update to ES Module System
+
 ### v2.4.0
 
 - :tada: Add `schema.not_found()`
