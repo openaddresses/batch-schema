@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.0.2
+
+- :bug: Internal schema path
+
 ### v3.0.1
 
 - :rocket: Add `.main` property to package.json
