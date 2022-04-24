@@ -1,5 +1,6 @@
 {
     "name": "@openaddresses/batch-schema",
+    "type": "module",
     "root": true,
     "version": "2.4.0",
     "description": "Strongly Validated JSON Schema support for address",

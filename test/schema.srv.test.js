@@ -1,8 +1,7 @@
-'use strict';
-const test = require('tape');
-const express = require('express');
-const { Schema } = require('../');
-const got = require('got');
+import test from 'tape';
+import express from 'express';
+import { Schema } from '../index.js';
+import got from 'got';
 
 const app = express();
 const schema = new Schema(express.Router(), {

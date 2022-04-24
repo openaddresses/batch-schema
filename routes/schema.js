@@ -1,7 +1,6 @@
-'use strict';
-const Err = require('../lib/error');
+import Err from '../lib/error.js';
 
-async function router(schema) {
+export default async function router(schema) {
     /**
      * @api {get} /api/schema List Schemas
      * @apiVersion 1.0.0
@@ -36,5 +35,3 @@ async function router(schema) {
         }
     });
 }
-
-module.exports = router;

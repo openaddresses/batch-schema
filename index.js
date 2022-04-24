@@ -1,4 +1,7 @@
-'use strict';
+import Schema from './lib/schema.js';
+import Err from './lib/error.js';
 
-module.exports.Schema = require('./lib/schema');
-module.exports.Err = require('./lib/error');
+export {
+    Schema,
+    Err
+};
