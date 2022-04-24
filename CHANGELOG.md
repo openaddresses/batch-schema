@@ -10,7 +10,7 @@
 
 ## Version History
 
-### v3.0.2
+### v3.1.1
 
 - :bug: Internal schema path
 
