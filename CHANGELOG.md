@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v3.1.3
+
+- :rocket: Add automated releases
+
 ### v3.1.2
 
 - :bug: Internal schema path
