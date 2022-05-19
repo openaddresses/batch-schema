@@ -14,7 +14,8 @@
     },
     "scripts": {
         "test": "tape test/**.test.js",
-        "lint": "eslint index.js lib/**.js routes/**.js test/**.js"
+        "lint": "eslint index.js lib/**.js routes/**.js test/**.js",
+        "doc": "documentation build index.js -f html -o docs && documentation lint index.js"
     },
     "dependencies": {
         "ajv": "^8.6.3",
@@ -25,6 +26,7 @@
         "tape": "^5.3.1"
     },
     "devDependencies": {
+        "documentation": "^13.2.5",
         "eslint": "^8.0.1",
         "eslint-plugin-node": "^11.0.0"
     }
