@@ -1,7 +1,6 @@
 import test from 'tape';
 import express from 'express';
 import { Schema } from '../index.js';
-import got from 'got';
 
 const app = express();
 const schema = new Schema(express.Router(), {
@@ -24,11 +23,10 @@ test('start', (t) => {
 
 test('GET: api/schema', async (t) => {
     try {
-        const res = await got('http://localhost:2000/api/schema', {
-            validateStatus: false
-        }).json();
+        const res = await fetch('http://localhost:2000/api/schema');
+        const body = await res.json();
 
-        t.deepEquals(res, {
+        t.deepEquals(body, {
             'GET /schema':{
                 body: false,
                 query: true,
@@ -44,22 +42,25 @@ test('GET: api/schema', async (t) => {
 
 test('GET: api/schema?method=FAKE', async (t) => {
     try {
-        await got('http://localhost:2000/api/schema?method=fake');
-        t.fail('4xx status code should throw');
-    } catch (err) {
-        t.deepEquals(JSON.parse(err.response.body), {
+        const res = await fetch('http://localhost:2000/api/schema?method=fake');
+
+        t.notOk(res.ok);
+
+        t.deepEquals(await res.json(), {
             status: 400,
             message: 'validation error',
             messages: [{
                 keyword: 'enum',
-                dataPath: '.method',
+                instancePath: '/method',
                 schemaPath: '#/properties/method/enum',
                 params: {
                     allowedValues: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
                 },
-                message: 'should be equal to one of the allowed values'
+                message: 'must be equal to one of the allowed values'
             }]
         });
+    } catch (err) {
+        t.error(err);
     }
 
     t.end();
@@ -67,28 +68,30 @@ test('GET: api/schema?method=FAKE', async (t) => {
 
 test('GET: api/schema?method=GET', async (t) => {
     try {
-        await got('http://localhost:2000/api/schema?method=GET');
-        t.fail('4xx status code should throw');
-    } catch (err) {
-        t.deepEquals(JSON.parse(err.response.body), {
+        const res = await fetch('http://localhost:2000/api/schema?method=GET');
+        t.notOk(res.ok);
+        t.deepEquals(await res.json(), {
             status: 400,
             message: 'url & method params must be used together',
             messages: []
         });
+    } catch (err) {
+        t.error(err);
     }
 
     t.end();
 });
 test('GET: api/schema?url=123', async (t) => {
     try {
-        await got('http://localhost:2000/api/schema?url=123');
-        t.fail('4xx status code should throw');
-    } catch (err) {
-        t.deepEquals(JSON.parse(err.response.body), {
+        const res = await fetch('http://localhost:2000/api/schema?url=123');
+        t.notOk(res.ok);
+        t.deepEquals(await res.json(), {
             status: 400,
             message: 'url & method params must be used together',
             messages: []
         });
+    } catch (err) {
+        t.error(err);
     }
 
     t.end();
@@ -96,10 +99,10 @@ test('GET: api/schema?url=123', async (t) => {
 
 test('GET: api/schema?method=GET&url=/schema', async (t) => {
     try {
-        const res = await got('http://localhost:2000/api/schema?method=GET&url=/schema');
+        const res = await fetch('http://localhost:2000/api/schema?method=GET&url=/schema');
 
-        t.equals(res.statusCode, 200, 'http: 200');
-        t.deepEquals(Object.keys(JSON.parse(res.body)).sort(), ['query', 'body', 'res'].sort());
+        t.equals(res.status, 200, 'http: 200');
+        t.deepEquals(Object.keys(await res.json()).sort(), ['query', 'body', 'res'].sort());
 
     } catch (err) {
         t.error(err, 'no error');
