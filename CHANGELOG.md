@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v4.0.0
+
+- :white_check_mark: Update schema validator to latest version (AJV 8)
+- :rocket: Remove `got` in favour of `fetch`
+
 ### v3.1.3
 
 - :rocket: Add automated releases
