@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v4.1.0
+
+- :bug: Ensure `default: false` is still applied
+- :arrow_up: Update base deps
+
 ### v4.0.0
 
 - :white_check_mark: Update schema validator to latest version (AJV 8)
