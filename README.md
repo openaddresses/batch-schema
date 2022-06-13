@@ -94,3 +94,18 @@ express compatible responses.
 ```
 schema.error()
 ```
+
+### schema.load
+
+Loads and runs all routes files in a directory
+
+```
+schema.load(directory, config, opts)
+```
+
+| Config Option     | Notes |
+| ----------------- | ----- |
+| `directory`       | Directory to load .js files from |
+| `config`          | Config option to pass to each route |
+| `opts`            | Optional Opts Object |
+| `opts.silent`     | Squelch output |
