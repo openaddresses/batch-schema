@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v4.2.0
+
+- :arrow_up: Update base deps
+- :tada: Add `load()` function for loading routes dir
+
 ### v4.1.0
 
 - :bug: Ensure `default: false` is still applied
