@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v4.3.0
+
+- :arrow_up: Update base deps
+- :tada: Support casting query param arrays into `integer`, `number`, or `boolean`
+
 ### v4.2.0
 
 - :arrow_up: Update base deps
