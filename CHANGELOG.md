@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v4.3.1
+
+- :rocket: Add ability to take a `URL` as a schemas directory
+
 ### v4.3.0
 
 - :arrow_up: Update base deps
