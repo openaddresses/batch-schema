@@ -10,7 +10,7 @@
 
 ## Version History
 
-### v4.3.1
+### v4.4.0
 
 - :rocket: Add ability to take a `URL` as a schemas directory
 
