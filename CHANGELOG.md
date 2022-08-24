@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.0.0
+
+- :tada: Logging and body parsing enabled by default
+
 ### v4.4.0
 
 - :rocket: Add ability to take a `URL` as a schemas directory
