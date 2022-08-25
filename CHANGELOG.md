@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v5.1.0
+
+- :rocket: Support `URL` in `Schema.load`
+
 ### v5.0.0
 
 - :tada: Logging and body parsing enabled by default
