@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v7.0.0
+
+- :rocket: Remove PublicError class to it's own package
+- :rocket: `Schema` is now exposed as the default
+
 ### v6.0.0
 
 - :rocket: Remove additional properties if they are not present in `res` and `additionalProperties: false` is set
