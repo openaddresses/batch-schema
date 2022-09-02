@@ -1,4 +1,4 @@
-import Err from '../lib/error.js';
+import Err from '@openaddresses/batch-error';
 
 export default async function router(schema) {
     /**

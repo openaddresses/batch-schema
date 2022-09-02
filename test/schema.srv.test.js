@@ -1,6 +1,6 @@
 import test from 'tape';
 import express from 'express';
-import { Schema } from '../index.js';
+import Schema from '../index.js';
 
 const app = express();
 const schema = new Schema(express.Router(), {
