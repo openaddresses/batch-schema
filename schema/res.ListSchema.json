@@ -1,7 +1,6 @@
 {
     "oneOf": [{
         "type": "object",
-        "additionalProperties": false,
         "patternProperties": {
             ".*": {
                 "type": "object",
@@ -10,7 +9,6 @@
                     "query",
                     "res"
                 ],
-                "additionalProperties": false,
                 "properties": {
                     "body": {
                         "type": "boolean",
@@ -34,7 +32,6 @@
             "res",
             "query"
         ],
-        "additionalProperties": false,
         "properties": {
             "body": {
                 "type": ["null", "object"]
