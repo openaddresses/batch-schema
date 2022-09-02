@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v6.0.0
+
+- :rocket: Remove additional properties if they are not present in `res` and `additionalProperties: false` is set
+
 ### v5.1.0
 
 - :rocket: Support `URL` in `Schema.load`
