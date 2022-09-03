@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.1.0
+
+- :bug: Only validate response on 200 status
+
 ### v7.0.0
 
 - :rocket: Remove PublicError class to it's own package
