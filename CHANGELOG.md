@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.2.0
+
+- :tada: Preliminary support for automatically generated an APIDoc definitions file
+
 ### v7.1.0
 
 - :bug: Only validate response on 200 status
