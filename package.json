@@ -30,7 +30,7 @@
         "tape": "^5.3.1"
     },
     "peerDependencies": {
-        "@openaddresses/batch-generic": "11.x.x"
+        "@openaddresses/batch-generic": "x.x.x"
     },
     "devDependencies": {
         "documentation": "^13.2.5",
