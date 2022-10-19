@@ -29,6 +29,9 @@
         "morgan": "^1.10.0",
         "tape": "^5.3.1"
     },
+    "peerDependencies": {
+        "@openaddresses/batch-generic": "x.x.x"
+    },
     "devDependencies": {
         "documentation": "^13.2.5",
         "eslint": "^8.0.1",
