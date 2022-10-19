@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.3.0
+
+- :arrow_up: `res.json` will automatically serialize Generic objects
+
 ### v7.2.0
 
 - :tada: Preliminary support for automatically generated an APIDoc definitions file
