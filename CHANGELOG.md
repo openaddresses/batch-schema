@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v2.4.0
+
+- :arrow_up: `res.json` will automatically serialize Generic objects
+
 ### v2.3.4
 
 - :arrow_up: Update base deps
