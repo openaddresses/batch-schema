@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.4.0
+
+- :tada: Add experimental `blueprint()` function
+
 ### v7.3.0
 
 - :arrow_up: `res.json` will automatically serialize Generic objects
