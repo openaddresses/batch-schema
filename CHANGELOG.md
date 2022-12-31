@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.5.0
+
+- :tada: Add support for inline JSON Schemas
+
 ### v7.4.0
 
 - :tada: Add experimental `blueprint()` function
