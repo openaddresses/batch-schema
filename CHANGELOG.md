@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.6.0
+
+- :tada: Update Core Deps
+
 ### v7.5.0
 
 - :tada: Add support for inline JSON Schemas
