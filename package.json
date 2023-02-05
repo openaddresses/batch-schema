@@ -3,7 +3,7 @@
     "type": "module",
     "root": true,
     "main": "index.js",
-    "version": "7.5.0",
+    "version": "7.6.0",
     "description": "Strongly Validated JSON Schema support for address",
     "repository": "git@github.com:openaddresses/batch-schema",
     "author": "ingalls <nick@ingalls.ca>",
