@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v7.6.1
+
+- :bug: Explicit AJV strict: false
+
 ### v7.6.0
 
 - :tada: Update Core Deps
