@@ -24,17 +24,17 @@
         "body-parser": "^1.20.0",
         "express": "^4.17.1",
         "express-json-validator-middleware": "^3.0.0",
-        "glob": "^8.0.0",
         "json-schema-ref-parser": "^9.0.9",
-        "morgan": "^1.10.0",
-        "tape": "^5.3.1"
+        "morgan": "^1.10.0"
     },
     "peerDependencies": {
         "@openaddresses/batch-generic": "x.x.x"
     },
     "devDependencies": {
-        "documentation": "^13.2.5",
+        "documentation": "^14.0.1",
         "eslint": "^8.0.1",
-        "eslint-plugin-node": "^11.0.0"
+        "eslint-plugin-node": "^11.0.0",
+        "glob": "^8.0.0",
+        "tape": "^5.3.1"
     }
 }
