@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v8.0.0
+
+- :data: Remove APIDoc support in favour of OpenAPI Route
+
 ### v7.6.1
 
 - :bug: Explicit AJV strict: false

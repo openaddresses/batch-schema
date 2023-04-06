@@ -5,12 +5,6 @@
 ## Installation
 
 ```sh
-yarn add @openaddresses/batch-schema
-```
-
-or
-
-```sh
 npm i @openaddresses/batch-schema
 ```
 
@@ -74,6 +68,8 @@ await schema.api()
 Adds a route called `GET /schema` which allows the caller to get a list of endpoints that the router manages
 as well as full schema details for every route. If your API is public we recommend enabling this feature, however
 if you do not wish for API routes to be published, this feature is disabled unless called.
+
+Adds a route called `GET /openapi` which returns an OpenAPI / Swagger JSON Object
 
 ### schema.not_found
 
