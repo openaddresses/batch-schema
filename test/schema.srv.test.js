@@ -31,6 +31,11 @@ test('GET: api/schema', async (t) => {
                 body: false,
                 query: true,
                 res: true
+            },
+            'GET /openapi': {
+                body: false,
+                query: false,
+                res: false
             }
         });
     } catch (err) {

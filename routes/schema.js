@@ -26,7 +26,7 @@ export default async function router(schema) {
     });
 
     await schema.get('/openapi', {
-        description: `Return a OpenAPI Schema for the API`
+        description: 'Return a OpenAPI Schema for the API'
     }, async (req, res) => {
         try {
             return res.json(schema.docs.base);
