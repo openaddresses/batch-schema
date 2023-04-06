@@ -3,7 +3,7 @@ import path from 'path';
 import test from 'tape';
 
 import glob from 'glob';
-import $RefParser from 'json-schema-ref-parser';
+import $RefParser from '@apidevtools/json-schema-ref-parser';
 import Ajv from 'ajv';
 
 const ajv = new Ajv({
