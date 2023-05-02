@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v8.1.0
+
+- :rocket: Load imports faster by using an async call
+
 ### v8.0.0
 
 - :data: Remove APIDoc support in favour of OpenAPI Route
