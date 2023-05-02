@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v8.1.1
+
+- :bug: Fix loads call & add `Promise` to ESLint
+
 ### v8.1.0
 
 - :rocket: Load imports faster by using an async call
