@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v9.0.0
+
+- :rocket: Only JSON parse body if `body` of JSON Schema is set. If body is not set it is up to the caller to parse the body
+
 ### v8.1.1
 
 - :bug: Fix loads call & add `Promise` to ESLint
