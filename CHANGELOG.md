@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v9.2.0
+
+- :rocket: Use Defaults in response middleware
+
 ### v9.1.0
 
 - :rocket: Only attempt to load js and ts files
