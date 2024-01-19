@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v9.3.0
+
+- :rocket: Coerce types on output
+
 ### v9.2.0
 
 - :rocket: Use Defaults in response middleware
