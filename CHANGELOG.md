@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v9.4.0
+
+- :rocket: Add support for `private` key which will hide endpoint in swagger
+
 ### v9.3.0
 
 - :rocket: Coerce types on output
