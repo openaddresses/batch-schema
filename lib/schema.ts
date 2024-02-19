@@ -1,9 +1,9 @@
-import { Validator } from 'express-json-validator-middleware';
 import $RefParser from '@apidevtools/json-schema-ref-parser';
 import fs from 'node:fs';
 import path from 'node:path';
 import morgan from 'morgan';
 import bodyparser from 'body-parser';
+import { Router } from 'express'
 
 import SchemaRoute from '../routes/schema.js';
 import Param from './param.js';
@@ -16,13 +16,21 @@ import Middleware from './middleware.js';
  * @param {Object} router Express Router Object
  * @param {Object} opts Options Object
  * @param {String} opts.schemas Schemas Path
- * @param {boolean|string} [opts.logging=true] disable logging with false
+ * @param {boolean|string} [opts.morgan=true] disable logging with false
  * @param {number} [opts.limit=50] body size limit in mb
  *
  * @param {URL} [opts.apidoc] apidoc file location
  */
 export default class Schemas {
-    constructor(router, opts = {}) {
+    router: Router;
+    schemas_path: string;
+    jsonparser: Function;
+
+    constructor(router: Router, opts: {
+        logging?: boolean;
+        limit?: number;
+        schemas?: string | URL;
+    } = {}) {
         if (!router) throw new Error('Router Param Required');
 
         if (!opts.schemas) {
@@ -34,20 +42,11 @@ export default class Schemas {
             this.schemas_path = opts.schemas;
         }
 
-        this.validator = new Validator({
-            removeAdditional: true,
-            useDefaults: true,
-            allErrors: true
-        });
-
         this.router = router;
 
-        if (opts.morgan !== false) this.router.use(morgan('combined'));
+        if (opts.logging !== false) this.router.use(morgan('combined'));
         this.router.use(bodyparser.urlencoded({ extended: true }));
         this.jsonparser = bodyparser.json({ limit: `${opts.limit}mb` });
-
-        this.schemas = new Map();
-        this.validate = this.validator.validate;
 
         this.docs = new Docs();
     }
@@ -92,22 +91,6 @@ export default class Schemas {
     async blueprint(bp_class, config, opts = {}) {
         if (!opts.silent) console.log(`ok - loaded ${bp_class.name}`);
         await bp_class.blueprint(this, config);
-    }
-
-    check(url, schemas, fns) {
-        if (typeof url !== 'string') throw new Error('URL should be string');
-
-        if (schemas === null) schemas = {};
-        if (typeof schemas !== 'object') throw new Error('Schemas should be object');
-
-        // Make sure express params are validated/coerced into proper type
-        const matches = url.match(/(:.+?)(?=\/|\.|$)/g);
-        if (matches) for (const match of matches) {
-            if (!schemas[match]) throw new Error(`${match} type is not defined in schema`);
-            if (!Param[schemas[match]]) throw new Error(`${schemas[match]} is not a supported type for ${match}`);
-        }
-
-        if (!fns.length) throw new Error('At least 1 route function should be defined');
     }
 
     async get(url, schemas, ...fns) {
