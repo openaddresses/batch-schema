@@ -14,8 +14,8 @@
     },
     "scripts": {
         "test": "tape test/**.test.js",
-        "lint": "eslint index.js lib/**.js routes/**.js test/**.js",
-        "doc": "documentation build index.js -f html -o docs && documentation lint index.js"
+        "lint": "eslint index.ts lib/**.ts routes/**.ts test/**.ts",
+        "doc": "typedoc"
     },
     "dependencies": {
         "@apidevtools/json-schema-ref-parser": "^10.0.0",
@@ -32,9 +32,13 @@
         "@openaddresses/batch-generic": "x.x.x"
     },
     "devDependencies": {
-        "documentation": "^14.0.1",
+        "@types/express": "^4.17.21",
+        "@typescript-eslint/eslint-plugin": "^7.0.1",
+        "@typescript-eslint/parser": "^7.0.1",
         "eslint": "^8.0.1",
         "eslint-plugin-node": "^11.0.0",
-        "tape": "^5.3.1"
+        "tape": "^5.3.1",
+        "typedoc": "^0.25.8",
+        "typescript": "^5.3.3"
     }
 }
