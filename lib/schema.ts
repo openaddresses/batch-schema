@@ -97,7 +97,7 @@ export default class Schemas {
      * @param {Object}  opts        Options Object
      * @param {boolean} opts.silent     Squelch StdOut
      */
-    async blueprint(bp_class, config, opts: {
+    async blueprint<T>(bp_class, config?: T, opts: {
         silent: boolean;
     } = { silent: false }) {
         if (!opts.silent) console.log(`ok - loaded ${bp_class.name}`);

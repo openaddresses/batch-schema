@@ -46,10 +46,12 @@ export default class Docs {
 
         const pathstr = path.join('/');
 
-        // @ts-expect-error
-        if (this.base.paths[pathstr][parsed.method]) throw new Error(`Duplicate Path: ${parsed.method}: ${parsed.path}`);
+        // @ts-ignore
+        if (this.base.paths[pathstr] && this.base.paths[pathstr][parsed.method]) throw new Error(`Duplicate Path: ${parsed.method}: ${parsed.path}`);
 
         if (!schemas.private) {
+            if (!this.base.paths[pathstr]) this.base.paths[pathstr] = {};
+
             const document: Doc.OperationObject = {
                 summary: schemas.description || 'No Description',
                 parameters: [],
@@ -113,7 +115,7 @@ export default class Docs {
                 };
             }
 
-            // @ts-expect-error
+            // @ts-ignore
             this.base.paths[pathstr][parsed.method] = document;
         }
     }

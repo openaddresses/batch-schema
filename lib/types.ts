@@ -22,6 +22,7 @@ export type RequestValidation<
     TResponse extends TSchema
 > = {
   private?: boolean;
+  name?: string;
   group?: string;
   description?: string;
   params?: TParams;
