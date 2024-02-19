@@ -15,7 +15,12 @@ export type TypedRequestQuery<TQuery extends TSchema> = Request<ParamsDictionary
 
 export type TypedResponseBody<TResponse extends TSchema> = Static<TResponse>;
 
-export type RequestValidation<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema> = {
+export type RequestValidation<
+    TParams extends TSchema,
+    TQuery extends TSchema,
+    TBody extends TSchema,
+    TResponse extends TSchema
+> = {
   private?: boolean;
   group?: string;
   description?: string;
