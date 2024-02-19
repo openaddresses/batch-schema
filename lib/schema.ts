@@ -29,7 +29,6 @@ export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ValueEr
 export default class Schemas {
     router: Router;
     schemas_path: string;
-    jsonparser: RequestHandler;
     docs: Docs;
 
     constructor(router: Router, opts: {
@@ -52,7 +51,7 @@ export default class Schemas {
 
         if (opts.logging !== false) this.router.use(morgan('combined'));
         this.router.use(bodyparser.urlencoded({ extended: true }));
-        this.jsonparser = bodyparser.json({ limit: `${opts.limit}mb` });
+        this.router.use(bodyparser.json({ limit: `${opts.limit}mb` }));
 
         this.docs = new Docs();
     }
@@ -115,8 +114,6 @@ export default class Schemas {
             path: path
         }, opts);
 
-        const flow: RequestHandler[] = [];
-        if (opts.body) flow.push(this.jsonparser);
         const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
         const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
         if (opts.body) throw new Error(`Body not allowed on GET ${path}`);
@@ -130,7 +127,7 @@ export default class Schemas {
             return handler(req, res, next);
         };
 
-        this.router.get(path, flow, _handler);
+        this.router.get(path, _handler);
     }
 
     async delete<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -143,8 +140,6 @@ export default class Schemas {
             path: path
         }, opts);
 
-        const flow: RequestHandler[] = [];
-        if (opts.body) flow.push(this.jsonparser);
         const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
         const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
         if (opts.body) throw new Error(`Body not allowed on GET ${path}`);
@@ -158,7 +153,7 @@ export default class Schemas {
             return handler(req, res, next);
         };
 
-        this.router.get(path, flow, _handler);
+        this.router.get(path, _handler);
     }
 
     async post<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -171,8 +166,6 @@ export default class Schemas {
             path: path
         }, opts);
 
-        const flow: RequestHandler[] = [];
-        if (opts.body) flow.push(this.jsonparser);
         const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
         const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
         const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
@@ -187,7 +180,7 @@ export default class Schemas {
             return handler(req, res, next);
         };
 
-        this.router.get(path, flow, _handler);
+        this.router.get(path, _handler);
     }
 
     async patch<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -200,8 +193,6 @@ export default class Schemas {
             path: path
         }, opts);
 
-        const flow: RequestHandler[] = [];
-        if (opts.body) flow.push(this.jsonparser);
         const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
         const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
         const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
@@ -216,7 +207,7 @@ export default class Schemas {
             return handler(req, res, next);
         };
 
-        this.router.get(path, flow, _handler);
+        this.router.get(path, _handler);
     }
 
     async put<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -229,8 +220,6 @@ export default class Schemas {
             path: path
         }, opts);
 
-        const flow: RequestHandler[] = [];
-        if (opts.body) flow.push(this.jsonparser);
         const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
         const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
         const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
@@ -245,14 +234,22 @@ export default class Schemas {
             return handler(req, res, next);
         };
 
-        this.router.get(path, flow, _handler);
+        this.router.get(path, _handler);
     }
+
+    not_found() {
+        this.router.all('*', (req, res) => {
+            return res.status(404).json({
+                status: 404,
+                message: 'API endpoint does not exist!',
+                messages: []
+            });
+        });
+    }
+
 
     /*
 
-    error() {
-        this.router.use(Middleware.error());
-    }
 
     query(method, url) {
         if (!this.schemas.has(`${method} ${url}`)) {
@@ -269,16 +266,6 @@ export default class Schemas {
             body: schema.body,
             res: schema.res
         };
-    }
-
-    not_found() {
-        this.router.all('*', (req, res) => {
-            return res.status(404).json({
-                status: 404,
-                message: 'API endpoint does not exist!',
-                messages: []
-            });
-        });
     }
 
     list() {
