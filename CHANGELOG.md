@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.0.1
+
+- :bug: Include dist files in npm bundle
+
 ### v10.0.0
 
 - :rocket: Very rough support for Typescript based routes
