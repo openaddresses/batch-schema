@@ -4,7 +4,7 @@
     "root": true,
     "main": "dist/index.js",
     "types": "index.ts",
-    "version": "10.1.0",
+    "version": "10.2.0",
     "description": "Strongly Validated JSON Schema support for address",
     "repository": "git@github.com:openaddresses/batch-schema",
     "author": "ingalls <nick@ingalls.ca>",
