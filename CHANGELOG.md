@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v10.2.0
+
+- :rocket: Remove skipLibCheck for further TS checking
+- :rocket: Add a couple internal types that threw from calling lib
+
 ### v10.1.0
 
 - :rocket: Add types to blueprint and take direct function

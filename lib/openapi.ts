@@ -66,7 +66,7 @@ export default class Docs {
                         in: 'path',
                         name: key,
                         schema: {
-                            type: schemas[key]
+                            type: schemas.params[key]
                         },
                         required: true
                     });

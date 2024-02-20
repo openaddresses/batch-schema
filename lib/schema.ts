@@ -275,7 +275,13 @@ export default class Schemas {
             res: boolean;
         }
     } {
-        const lite = {};
+        const lite: {
+            [k: string]: {
+                body: boolean;
+                query: boolean;
+                res: boolean;
+            }
+        } = {};
 
         for (const key of this.schemas.keys()) {
             const schema = this.schemas.get(key);
