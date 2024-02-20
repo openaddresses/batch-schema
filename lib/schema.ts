@@ -20,7 +20,6 @@ export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ValueEr
  *
  * @param {Object} router Express Router Object
  * @param {Object} opts Options Object
- * @param {String} opts.schemas Schemas Path
  * @param {boolean|string} [opts.morgan=true] disable logging with false
  * @param {number} [opts.limit=50] body size limit in mb
  *
@@ -28,31 +27,20 @@ export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ValueEr
  */
 export default class Schemas {
     router: Router;
-    schemas_path: string;
     docs: Docs;
     schemas: Map<string, RequestValidation<any, any, any, any>>
 
     constructor(router: Router, opts: {
         logging?: boolean;
         limit?: number;
-        schemas?: string | URL;
     } = {}) {
         if (!router) throw new Error('Router Param Required');
-
-        if (!opts.schemas) {
-            this.schemas_path = new URL('../schema/', import.meta.url).pathname;
-        } else {
-            if (opts.schemas instanceof URL) opts.schemas = opts.schemas.pathname;
-            else opts.schemas = String(opts.schemas);
-
-            this.schemas_path = opts.schemas;
-        }
 
         this.router = router;
 
         if (opts.logging !== false) this.router.use(morgan('combined'));
         this.router.use(bodyparser.urlencoded({ extended: true }));
-        this.router.use(bodyparser.json({ limit: `${opts.limit}mb` }));
+        this.router.use(bodyparser.json({ limit: `${opts.limit || 50}mb` }));
 
         this.docs = new Docs();
         this.schemas = new Map();
