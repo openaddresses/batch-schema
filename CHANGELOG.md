@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.0.0
+
+- :rocket: Very rough support for Typescript based routes
+
 ### v9.4.0
 
 - :rocket: Add support for `private` key which will hide endpoint in swagger

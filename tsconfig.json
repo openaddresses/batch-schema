@@ -21,7 +21,6 @@
     },
     "include": [
         "index.ts",
-        "routes/**.ts",
         "lib/**.ts",
         "test/**.ts"
     ]

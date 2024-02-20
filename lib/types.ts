@@ -1,5 +1,5 @@
 import { Static, TSchema } from '@sinclair/typebox';
-import type { RequestHandler, Request } from 'express';
+import type { Request } from 'express';
 import type { ParamsDictionary } from 'express-serve-static-core';
 
 export type TypedRequest<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema> = Request<

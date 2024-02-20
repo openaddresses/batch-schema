@@ -10,7 +10,7 @@ import { TypeCompiler } from '@sinclair/typebox/compiler';
 import type { ValueError } from '@sinclair/typebox/errors';
 import { RequestValidation } from './types.js';
 
-import SchemaRoute from '../routes/schema.js';
+import SchemaAPI from './api.js';
 import Docs from './openapi.js';
 
 export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ValueError[] };
@@ -30,6 +30,7 @@ export default class Schemas {
     router: Router;
     schemas_path: string;
     docs: Docs;
+    schemas: Map<string, RequestValidation<any, any, any, any>>
 
     constructor(router: Router, opts: {
         logging?: boolean;
@@ -54,10 +55,11 @@ export default class Schemas {
         this.router.use(bodyparser.json({ limit: `${opts.limit}mb` }));
 
         this.docs = new Docs();
+        this.schemas = new Map();
     }
 
     async api() {
-        await SchemaRoute(this);
+        await SchemaAPI(this);
     }
 
     /**
@@ -87,6 +89,8 @@ export default class Schemas {
         }
 
         await Promise.all(routes);
+
+        this.not_found();
     }
 
     /**
@@ -109,25 +113,27 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
     ) {
-        this.docs.push({
-            method: Doc.HttpMethods.GET,
-            path: path
-        }, opts);
+        try {
+            this.docs.push({ method: Doc.HttpMethods.GET, path: path }, opts);
+            this.schemas.set(`GET ${path}`, opts);
 
-        const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-        const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-        if (opts.body) throw new Error(`Body not allowed on GET ${path}`);
+            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
+            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
+            if (opts.body) throw new Error(`Body not allowed`);
 
-        const _handler: RequestHandler = (req, res, next) => {
-            const errors: Array<ErrorListItem> = [];
-            if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-            if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-            if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+            const _handler: RequestHandler = (req, res, next) => {
+                const errors: Array<ErrorListItem> = [];
+                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
+                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
-            return handler(req, res, next);
-        };
+                return handler(req, res, next);
+            };
 
-        this.router.get(path, _handler);
+            this.router.get(path, _handler);
+        } catch (err) {
+            throw new Error(`Get: ${path}: ` + err)
+        }
     }
 
     async delete<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -135,25 +141,27 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
     ) {
-        this.docs.push({
-            method: Doc.HttpMethods.DELETE,
-            path: path
-        }, opts);
+        try {
+            this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, opts);
+            this.schemas.set(`DELETE ${path}`, opts);
 
-        const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-        const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-        if (opts.body) throw new Error(`Body not allowed on GET ${path}`);
+            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
+            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
+            if (opts.body) throw new Error(`Body not allowed`);
 
-        const _handler: RequestHandler = (req, res, next) => {
-            const errors: Array<ErrorListItem> = [];
-            if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-            if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-            if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+            const _handler: RequestHandler = (req, res, next) => {
+                const errors: Array<ErrorListItem> = [];
+                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
+                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
-            return handler(req, res, next);
-        };
+                return handler(req, res, next);
+            };
 
-        this.router.get(path, _handler);
+            this.router.get(path, _handler);
+        } catch (err) {
+            throw new Error(`Delete: ${path}: ` + String(err))
+        }
     }
 
     async post<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -161,26 +169,28 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
     ) {
-        this.docs.push({
-            method: Doc.HttpMethods.POST,
-            path: path
-        }, opts);
+        try {
+            this.docs.push({ method: Doc.HttpMethods.POST, path: path }, opts);
+            this.schemas.set(`POST ${path}`, opts);
 
-        const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-        const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-        const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
+            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
+            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
+            const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
 
-        const _handler: RequestHandler = (req, res, next) => {
-            const errors: Array<ErrorListItem> = [];
-            if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-            if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-            if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
-            if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+            const _handler: RequestHandler = (req, res, next) => {
+                const errors: Array<ErrorListItem> = [];
+                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
+                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
+                if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
-            return handler(req, res, next);
-        };
+                return handler(req, res, next);
+            };
 
-        this.router.get(path, _handler);
+            this.router.get(path, _handler);
+        } catch (err) {
+            throw new Error(`Post: ${path}: ` + String(err))
+        }
     }
 
     async patch<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -188,26 +198,28 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
     ) {
-        this.docs.push({
-            method: Doc.HttpMethods.PATCH,
-            path: path
-        }, opts);
+        try {
+            this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, opts);
+            this.schemas.set(`PATCH ${path}`, opts);
 
-        const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-        const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-        const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
+            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
+            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
+            const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
 
-        const _handler: RequestHandler = (req, res, next) => {
-            const errors: Array<ErrorListItem> = [];
-            if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-            if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-            if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
-            if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+            const _handler: RequestHandler = (req, res, next) => {
+                const errors: Array<ErrorListItem> = [];
+                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
+                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
+                if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
-            return handler(req, res, next);
-        };
+                return handler(req, res, next);
+            };
 
-        this.router.get(path, _handler);
+            this.router.get(path, _handler);
+        } catch (err) {
+            throw new Error(`Patch: ${path}: ` + String(err))
+        }
     }
 
     async put<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -215,26 +227,28 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
     ) {
-        this.docs.push({
-            method: Doc.HttpMethods.PUT,
-            path: path
-        }, opts);
+        try {
+            this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, opts);
+            this.schemas.set(`PUT ${path}`, opts);
 
-        const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-        const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-        const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
+            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
+            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
+            const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
 
-        const _handler: RequestHandler = (req, res, next) => {
-            const errors: Array<ErrorListItem> = [];
-            if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-            if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-            if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
-            if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+            const _handler: RequestHandler = (req, res, next) => {
+                const errors: Array<ErrorListItem> = [];
+                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
+                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
+                if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
-            return handler(req, res, next);
-        };
+                return handler(req, res, next);
+            };
 
-        this.router.get(path, _handler);
+            this.router.get(path, _handler);
+        } catch (err) {
+            throw new Error(`Put: ${path}: ` + String(err))
+        }
     }
 
     not_found() {
@@ -248,18 +262,16 @@ export default class Schemas {
     }
 
 
-    /*
-
-
-    query(method, url) {
+    query(method: Doc.HttpMethods, url: string): {
+        query?: object;
+        body?: object;
+        res?: object;
+    } {
         if (!this.schemas.has(`${method} ${url}`)) {
-            return { body: null, schema: null };
+            return {};
         }
 
         const schema = JSON.parse(JSON.stringify(this.schemas.get(`${method} ${url}`)));
-        if (!schema.query) schema.query = null;
-        if (!schema.body) schema.body = null;
-        if (!schema.res) schema.res = null;
 
         return {
             query: schema.query,
@@ -268,18 +280,26 @@ export default class Schemas {
         };
     }
 
-    list() {
+    list(): {
+        [k: string]: {
+            body: boolean;
+            query: boolean;
+            res: boolean;
+        }
+    } {
         const lite = {};
 
         for (const key of this.schemas.keys()) {
+            const schema = this.schemas.get(key);
+            if (!schema) continue;
+
             lite[key] = {
-                body: !!this.schemas.get(key).body,
-                query: !!this.schemas.get(key).query,
-                res: !!this.schemas.get(key).res
+                body: !!schema.body,
+                query: !!schema.query,
+                res: !!schema.res
             };
         }
 
         return lite;
     }
-*/
 }

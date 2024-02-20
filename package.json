@@ -13,8 +13,9 @@
         "node": ">= 18"
     },
     "scripts": {
-        "test": "tape test/**.test.js",
-        "lint": "eslint index.ts lib/**.ts routes/**.ts test/**.ts",
+        "test": "ts-node-test test/**.test.ts",
+        "lint": "eslint index.ts lib/**.ts test/**.ts",
+        "build": "tsc",
         "doc": "typedoc"
     },
     "dependencies": {
@@ -31,6 +32,7 @@
         "@openaddresses/batch-generic": "x.x.x"
     },
     "devDependencies": {
+        "ts-node-test": "^0.4.3",
         "@types/express": "^4.17.21",
         "@typescript-eslint/eslint-plugin": "^7.0.1",
         "@typescript-eslint/parser": "^7.0.1",

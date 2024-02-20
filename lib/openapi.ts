@@ -29,7 +29,7 @@ export default class Docs {
         },
         schemas: RequestValidation<any, any, any, any>
     ): void {
-        let path: Array<string> = [];
+        const path: Array<string> = [];
 
         for (let sec of parsed.path.split('/')) {
             for (const lit of ['.', '-']) { // These chars are used literally and can't be part of a param name

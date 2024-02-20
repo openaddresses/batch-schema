@@ -3,20 +3,15 @@ import express from 'express';
 import Schema from '../index.js';
 
 const app = express();
-const schema = new Schema(express.Router(), {
-    api: true
-});
+const schema = new Schema(express.Router());
 
 app.use('/api', schema.router);
 
-let server = false;
+let server;
 
 test('start', (t) => {
-    server = app.listen(2000, async (err) => {
+    server = app.listen(2000, async () => {
         await schema.api();
-        schema.error();
-
-        t.error(err, 'no errors');
         t.end();
     });
 });
@@ -35,7 +30,7 @@ test('GET: api/schema', async (t) => {
             'GET /openapi': {
                 body: false,
                 query: false,
-                res: false
+                res: true
             }
         });
     } catch (err) {
@@ -53,16 +48,10 @@ test('GET: api/schema?method=FAKE', async (t) => {
 
         t.deepEquals(await res.json(), {
             status: 400,
-            message: 'validation error',
-            messages: [{
-                keyword: 'enum',
-                instancePath: '/method',
-                schemaPath: '#/properties/method/enum',
-                params: {
-                    allowedValues: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
-                },
-                message: 'must be equal to one of the allowed values'
-            }]
+            message: 'Validation Error',
+            messages: [
+                {"type":"Query","errors":[{"type":62,"schema":{"anyOf":[{"const":"GET","type":"string"},{"const":"PUT","type":"string"},{"const":"POST","type":"string"},{"const":"DELETE","type":"string"},{"const":"OPTIONS","type":"string"},{"const":"HEAD","type":"string"},{"const":"PATCH","type":"string"},{"const":"TRACE","type":"string"}]},"path":"/method","value":"fake","message":"Expected union value"}]}
+            ]
         });
     } catch (err) {
         t.error(err);
@@ -107,7 +96,7 @@ test('GET: api/schema?method=GET&url=/schema', async (t) => {
         const res = await fetch('http://localhost:2000/api/schema?method=GET&url=/schema');
 
         t.equals(res.status, 200, 'http: 200');
-        t.deepEquals(Object.keys(await res.json()).sort(), ['query', 'body', 'res'].sort());
+        t.deepEquals(Object.keys(await res.json()).sort(), ['query', 'res'].sort());
 
     } catch (err) {
         t.error(err, 'no error');
