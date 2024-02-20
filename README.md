@@ -1,6 +1,6 @@
 <h1 align=center>Batch-Schema</h1>
 
-<p align=center>Express Plugin for JSON Schema based routes</p>
+<p align=center>Express Plugin for [TypeBox](https://github.com/sinclairzx81/typebox) Request and Response Validation</p>
 
 ## Installation
 
@@ -11,13 +11,14 @@ npm i @openaddresses/batch-schema
 ## Example Usage
 
 ```js
-const path = require('path');
-const express = require('express');
-const { Schema } = require('@openaddresses/batch-schema');
+import express from 'express';
+import Schema from '@openaddresses/batch-schema';
+import { Type } from '@sinclair/typebox';
 
 const app = express();
 const schema = new Schema(express.Router(), {
-    schemas: path.resolve(__dirname, 'schemas')
+    logging: true,  // Enable Morgan Logging
+    limit: 50       // Body size for parsing JSON
 });
 
 app.use('/api', schema.router);
@@ -26,22 +27,25 @@ server();
 
 async function server() {
     await schema.post('/api/:param1/:param2', {
-        ':param1': 'integer',
-        ':param2': 'string',
-        query: 'query-json-schema.json',
-        body: 'body-json-schema.json',
-        res: 'result-body-json-schema.json'
+        query: Type.Object({
+            example: Type.Optional(Type.Uppercase(Type.String()))
+        }),
+        params: Type.Object({
+            param1: Type.String(),
+            param2: Type.Number(),
+        }),
+        body: Type.Object({
+            username: Type.String(),
+            password: Type.String(),
+        }),
+        res: Type.Object({
+            token: Type.String()
+        }),
     }, (req, res) => {
         return res.json({
-            note: 'I only return if the request meets the query & body schemas'
+            token: 'I only return if the request meets the query & body schemas'
         });
     });
-
-    // Handle Unmatched Routes
-    schema.not_found();
-
-    // Handle Validation Errors => JSON Middleware
-    schema.error();
 }
 ```
 

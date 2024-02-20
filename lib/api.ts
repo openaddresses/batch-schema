@@ -1,9 +1,15 @@
 import Err from '@openaddresses/batch-error';
+import Schema from './schema.js'
+import { OpenAPIV3 as Doc } from 'openapi-types'
+import { Type } from '@sinclair/typebox'
 
-export default async function router(schema) {
+export default async function router(schema: Schema) {
     await schema.get('/schema', {
-        query: 'req.query.ListSchema.json',
-        res: 'res.ListSchema.json',
+        query: Type.Object({
+            method: Type.Optional(Type.Uppercase(Type.Enum(Doc.HttpMethods))),
+            url: Type.Optional(Type.String())
+        }),
+        res: Type.Object({}),
         description: `
             List all JSON Schemas in use
             With no parameters this API will return a list of all the endpoints that have a form of schema validation
@@ -26,7 +32,8 @@ export default async function router(schema) {
     });
 
     await schema.get('/openapi', {
-        description: 'Return a OpenAPI Schema for the API'
+        description: 'Return a OpenAPI Schema for the API',
+        res: Type.Object({})
     }, async (req, res) => {
         try {
             return res.json(schema.docs.base);
