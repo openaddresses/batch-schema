@@ -1,6 +1,6 @@
 <h1 align=center>Batch-Schema</h1>
 
-<p align=center>Express Plugin for [TypeBox](https://github.com/sinclairzx81/typebox) Request and Response Validation</p>
+<p align=center>Express Plugin for <a href='https://github.com/sinclairzx81/typebox'>TypeBox</a> Request and Response Validation</p>
 
 ## Installation
 
