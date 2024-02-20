@@ -99,7 +99,7 @@ export default class Schemas {
     async get<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
         path: string,
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
             this.docs.push({ method: Doc.HttpMethods.GET, path: path }, opts);
@@ -127,7 +127,7 @@ export default class Schemas {
     async delete<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
         path: string,
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
             this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, opts);
@@ -155,7 +155,7 @@ export default class Schemas {
     async post<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
         path: string,
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
             this.docs.push({ method: Doc.HttpMethods.POST, path: path }, opts);
@@ -184,7 +184,7 @@ export default class Schemas {
     async patch<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
         path: string,
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
             this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, opts);
@@ -213,7 +213,7 @@ export default class Schemas {
     async put<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
         path: string,
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, any, Static<TBody>, Static<TQuery>>
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
             this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, opts);

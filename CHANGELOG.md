@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.3.0
+
+- :rocket: Add Response Body Type
+
 ### v10.2.0
 
 - :rocket: Remove skipLibCheck for further TS checking
