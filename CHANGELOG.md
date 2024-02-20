@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.0.2
+
+- :bug: Differentiate `main` and `types` in package.json
+
 ### v10.0.1
 
 - :bug: Include dist files in npm bundle
