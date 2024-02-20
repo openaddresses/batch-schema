@@ -84,16 +84,16 @@ export default class Schemas {
     /**
      * Load a blueprint into the router
      *
-     * @param {Object}  bp_class    Blueprint Class with blueprint() fn
+     * @param {Object}  bp_funcion  Blueprint Function to init instances
      * @param {object}  config      Config Object
      * @param {Object}  opts        Options Object
      * @param {boolean} opts.silent     Squelch StdOut
      */
-    async blueprint<T>(bp_class, config?: T, opts: {
+    async blueprint<T>(bp_fn: (schema: Schemas, config?: T) => Promise<void>, config?: T, opts: {
         silent: boolean;
     } = { silent: false }) {
-        if (!opts.silent) console.log(`ok - loaded ${bp_class.name}`);
-        await bp_class.blueprint(this, config);
+        if (!opts.silent) console.log(`ok - loaded blueprint`);
+        await bp_fn(this, config);
     }
 
     async get<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(

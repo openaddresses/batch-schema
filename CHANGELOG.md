@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.1.0
+
+- :rocket: Add types to blueprint and take direct function
+
 ### v10.0.2
 
 - :bug: Differentiate `main` and `types` in package.json
