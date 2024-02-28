@@ -6,14 +6,22 @@ import Err from '@openaddresses/batch-error';
 import { Static, TSchema } from '@sinclair/typebox';
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import { Router, RequestHandler } from 'express'
-import { TypeCompiler } from '@sinclair/typebox/compiler';
-import type { ValueError } from '@sinclair/typebox/errors';
+import Ajv, { ErrorObject } from 'ajv'
+import addFormats from 'ajv-formats'
 import { RequestValidation } from './types.js';
 
 import SchemaAPI from './api.js';
 import Docs from './openapi.js';
 
-export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ValueError[] };
+const ajv = addFormats(new Ajv({
+    strict: false,
+    allErrors: true,
+    useDefaults: true,
+    removeAdditional: true,
+    coerceTypes: true
+}));
+
+export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ErrorObject[] };
 
 /**
  * @class
@@ -105,14 +113,14 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.GET, path: path }, opts);
             this.schemas.set(`GET ${path}`, opts);
 
-            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
+            const paramsValidation = opts.params && ajv.compile(opts.params);
+            const queryValidation = opts.query && ajv.compile(opts.query);
             if (opts.body) throw new Error(`Body not allowed`);
 
             const _handler: RequestHandler = (req, res, next) => {
                 const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
+                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
+                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 return handler(req, res, next);
@@ -133,14 +141,14 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, opts);
             this.schemas.set(`DELETE ${path}`, opts);
 
-            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
+            const paramsValidation = opts.params && ajv.compile(opts.params);
+            const queryValidation = opts.query && ajv.compile(opts.query);
             if (opts.body) throw new Error(`Body not allowed`);
 
             const _handler: RequestHandler = (req, res, next) => {
                 const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
+                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
+                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 return handler(req, res, next);
@@ -161,15 +169,15 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.POST, path: path }, opts);
             this.schemas.set(`POST ${path}`, opts);
 
-            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-            const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
+            const paramsValidation = opts.params && ajv.compile(opts.params);
+            const queryValidation = opts.query && ajv.compile(opts.query);
+            const bodyValidation = opts.body && ajv.compile(opts.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-                if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
+                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
+                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
+                if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 return handler(req, res, next);
@@ -190,15 +198,15 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, opts);
             this.schemas.set(`PATCH ${path}`, opts);
 
-            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-            const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
+            const paramsValidation = opts.params && ajv.compile(opts.params);
+            const queryValidation = opts.query && ajv.compile(opts.query);
+            const bodyValidation = opts.body && ajv.compile(opts.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-                if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
+                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
+                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
+                if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 return handler(req, res, next);
@@ -219,15 +227,15 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, opts);
             this.schemas.set(`PUT ${path}`, opts);
 
-            const paramsValidation = opts.params && TypeCompiler.Compile(opts.params);
-            const queryValidation = opts.query && TypeCompiler.Compile(opts.query);
-            const bodyValidation = opts.body && TypeCompiler.Compile(opts.body);
+            const paramsValidation = opts.params && ajv.compile(opts.params);
+            const queryValidation = opts.query && ajv.compile(opts.query);
+            const bodyValidation = opts.body && ajv.compile(opts.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation.Check(req.params)) errors.push({ type: 'Params', errors: Array.from(paramsValidation.Errors(req.params)) });
-                if (queryValidation && !queryValidation.Check(req.query)) errors.push({ type: 'Query', errors: Array.from(queryValidation.Errors(req.query)) });
-                if (bodyValidation && !bodyValidation.Check(req.body)) errors.push({ type: 'Body', errors: Array.from(bodyValidation.Errors(req.body)) });
+                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
+                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
+                if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 return handler(req, res, next);

@@ -1,6 +1,4 @@
-import { Static, TSchema } from '@sinclair/typebox';
-import type { Request } from 'express';
-import type { ParamsDictionary } from 'express-serve-static-core';
+import { TSchema } from '@sinclair/typebox';
 
 export type RequestValidation<
     TParams extends TSchema,
