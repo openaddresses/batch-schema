@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.5.0
+
+- :bug: Switch to AJV for ability to cast
+
 ### v10.4.0
 
 - :bug: Fix router verbs
