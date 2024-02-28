@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.4.0
+
+- :bug: Fix router verbs
+
 ### v10.3.0
 
 - :rocket: Add Response Body Type

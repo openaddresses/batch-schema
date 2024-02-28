@@ -146,7 +146,7 @@ export default class Schemas {
                 return handler(req, res, next);
             };
 
-            this.router.get(path, _handler);
+            this.router.delete(path, _handler);
         } catch (err) {
             throw new Error(`Delete: ${path}: ` + String(err))
         }
@@ -175,7 +175,7 @@ export default class Schemas {
                 return handler(req, res, next);
             };
 
-            this.router.get(path, _handler);
+            this.router.post(path, _handler);
         } catch (err) {
             throw new Error(`Post: ${path}: ` + String(err))
         }
@@ -204,7 +204,7 @@ export default class Schemas {
                 return handler(req, res, next);
             };
 
-            this.router.get(path, _handler);
+            this.router.patch(path, _handler);
         } catch (err) {
             throw new Error(`Patch: ${path}: ` + String(err))
         }
@@ -233,7 +233,7 @@ export default class Schemas {
                 return handler(req, res, next);
             };
 
-            this.router.get(path, _handler);
+            this.router.put(path, _handler);
         } catch (err) {
             throw new Error(`Put: ${path}: ` + String(err))
         }
