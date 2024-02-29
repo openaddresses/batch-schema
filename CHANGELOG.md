@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.6.0
+
+- :bug: Properties that are not defined in the Schema are always removed
+
 ### v10.5.0
 
 - :bug: Switch to AJV for ability to cast
