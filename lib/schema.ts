@@ -17,7 +17,7 @@ const ajv = addFormats(new Ajv({
     strict: false,
     allErrors: true,
     useDefaults: true,
-    removeAdditional: true,
+    removeAdditional: 'all',
     coerceTypes: true
 }));
 
