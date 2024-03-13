@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.7.0
+
+- :data: Enfoce `res.json` with AJV
+
 ### v10.6.0
 
 - :bug: Properties that are not defined in the Schema are always removed

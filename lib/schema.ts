@@ -113,6 +113,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.GET, path: path }, opts);
             this.schemas.set(`GET ${path}`, opts);
 
+            const resValidation = opts.res && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             if (opts.body) throw new Error(`Body not allowed`);
@@ -122,6 +123,17 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+
+                const json = res.json;
+                res.json = function(obj) {
+                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
+                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
+                        res.status(400);
+                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
+                    } else {
+                        return json.call(this, obj);
+                    }
+                };
 
                 return handler(req, res, next);
             };
@@ -141,6 +153,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, opts);
             this.schemas.set(`DELETE ${path}`, opts);
 
+            const resValidation = opts.res && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             if (opts.body) throw new Error(`Body not allowed`);
@@ -150,6 +163,17 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+
+                const json = res.json;
+                res.json = function(obj) {
+                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
+                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
+                        res.status(400);
+                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
+                    } else {
+                        return json.call(this, obj);
+                    }
+                };
 
                 return handler(req, res, next);
             };
@@ -169,6 +193,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.POST, path: path }, opts);
             this.schemas.set(`POST ${path}`, opts);
 
+            const resValidation = opts.res && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             const bodyValidation = opts.body && ajv.compile(opts.body);
@@ -179,6 +204,17 @@ export default class Schemas {
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+
+                const json = res.json;
+                res.json = function(obj) {
+                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
+                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
+                        res.status(400);
+                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
+                    } else {
+                        return json.call(this, obj);
+                    }
+                };
 
                 return handler(req, res, next);
             };
@@ -198,6 +234,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, opts);
             this.schemas.set(`PATCH ${path}`, opts);
 
+            const resValidation = opts.res && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             const bodyValidation = opts.body && ajv.compile(opts.body);
@@ -208,6 +245,17 @@ export default class Schemas {
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+
+                const json = res.json;
+                res.json = function(obj) {
+                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
+                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
+                        res.status(400);
+                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
+                    } else {
+                        return json.call(this, obj);
+                    }
+                };
 
                 return handler(req, res, next);
             };
@@ -227,6 +275,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, opts);
             this.schemas.set(`PUT ${path}`, opts);
 
+            const resValidation = opts.res && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             const bodyValidation = opts.body && ajv.compile(opts.body);
@@ -237,6 +286,17 @@ export default class Schemas {
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
                 if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+
+                const json = res.json;
+                res.json = function(obj) {
+                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
+                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
+                        res.status(400);
+                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
+                    } else {
+                        return json.call(this, obj);
+                    }
+                };
 
                 return handler(req, res, next);
             };
