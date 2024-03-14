@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.8.1
+
+- :rocket: Add back Type.Any() for api.js
+
 ### v10.8.0
 
 - :rocket: Ignore `Type.Any` or `Type.Unknown`
