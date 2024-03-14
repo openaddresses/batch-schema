@@ -9,7 +9,6 @@ export default async function router(schema: Schema) {
             method: Type.Optional(Type.Uppercase(Type.Enum(Doc.HttpMethods))),
             url: Type.Optional(Type.String())
         }),
-        res: Type.Object({}),
         description: `
             List all JSON Schemas in use
             With no parameters this API will return a list of all the endpoints that have a form of schema validation
@@ -33,7 +32,6 @@ export default async function router(schema: Schema) {
 
     await schema.get('/openapi', {
         description: 'Return a OpenAPI Schema for the API',
-        res: Type.Object({})
     }, async (req, res) => {
         try {
             return res.json(schema.docs.base);
