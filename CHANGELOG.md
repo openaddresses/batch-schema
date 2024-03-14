@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.8.0
+
+- :rocket: Ignore `Type.Any` or `Type.Unknown`
+
 ### v10.7.1
 
 - :data: Don't validate API response body

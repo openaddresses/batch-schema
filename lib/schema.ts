@@ -3,7 +3,7 @@ import path from 'node:path';
 import morgan from 'morgan';
 import bodyparser from 'body-parser';
 import Err from '@openaddresses/batch-error';
-import { Static, TSchema } from '@sinclair/typebox';
+import { Static, Type, TSchema } from '@sinclair/typebox';
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import { Router, RequestHandler } from 'express'
 import Ajv, { ErrorObject } from 'ajv'
@@ -113,7 +113,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.GET, path: path }, opts);
             this.schemas.set(`GET ${path}`, opts);
 
-            const resValidation = opts.res && ajv.compile(opts.res);
+            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             if (opts.body) throw new Error(`Body not allowed`);
@@ -153,7 +153,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, opts);
             this.schemas.set(`DELETE ${path}`, opts);
 
-            const resValidation = opts.res && ajv.compile(opts.res);
+            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             if (opts.body) throw new Error(`Body not allowed`);
@@ -193,7 +193,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.POST, path: path }, opts);
             this.schemas.set(`POST ${path}`, opts);
 
-            const resValidation = opts.res && ajv.compile(opts.res);
+            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             const bodyValidation = opts.body && ajv.compile(opts.body);
@@ -234,7 +234,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, opts);
             this.schemas.set(`PATCH ${path}`, opts);
 
-            const resValidation = opts.res && ajv.compile(opts.res);
+            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             const bodyValidation = opts.body && ajv.compile(opts.body);
@@ -275,7 +275,7 @@ export default class Schemas {
             this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, opts);
             this.schemas.set(`PUT ${path}`, opts);
 
-            const resValidation = opts.res && ajv.compile(opts.res);
+            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
             const paramsValidation = opts.params && ajv.compile(opts.params);
             const queryValidation = opts.query && ajv.compile(opts.query);
             const bodyValidation = opts.body && ajv.compile(opts.body);
