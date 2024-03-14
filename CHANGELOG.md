@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.7.1
+
+- :data: Don't validate API response body
+
 ### v10.7.0
 
 - :data: Enfoce `res.json` with AJV
