@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.9.0
+
+- :arrow_up: Update all deps
+
 ### v10.8.1
 
 - :rocket: Add back Type.Any() for api.js

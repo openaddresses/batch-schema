@@ -46,7 +46,6 @@ export default class Docs {
 
         const pathstr = path.join('/');
 
-        // @ts-ignore
         if (this.base.paths[pathstr] && this.base.paths[pathstr][parsed.method]) throw new Error(`Duplicate Path: ${parsed.method}: ${parsed.path}`);
 
         if (!schemas.private) {
@@ -115,7 +114,6 @@ export default class Docs {
                 };
             }
 
-            // @ts-ignore
             this.base.paths[pathstr][parsed.method] = document;
         }
     }
