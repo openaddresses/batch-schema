@@ -24,7 +24,7 @@ export default async function router(schema: Schema) {
             } else if (req.query.url || req.query.method) {
                 throw new Err(400, null, 'url & method params must be used together');
             } else {
-                return res.json(schema.list());
+                res.json(schema.list());
             }
         } catch (err) {
             return Err.respond(err, res);
@@ -36,7 +36,7 @@ export default async function router(schema: Schema) {
         res: Type.Any(),
     }, async (req, res) => {
         try {
-            return res.json(schema.docs.base);
+            res.json(schema.docs.base);
         } catch (err) {
             return Err.respond(err, res);
         }

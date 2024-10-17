@@ -309,7 +309,7 @@ export default class Schemas {
 
     not_found() {
         this.router.all('*', (req, res) => {
-            return res.status(404).json({
+            res.status(404).json({
                 status: 404,
                 message: 'API endpoint does not exist!',
                 messages: []

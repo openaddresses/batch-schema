@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v10.10.0
+
+- :arrow_up: Update all deps
+- :rocket: Use @types/express@5 TS definitions
+
 ### v10.9.0
 
 - :arrow_up: Update all deps
