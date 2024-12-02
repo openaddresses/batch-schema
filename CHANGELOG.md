@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.11.0
+
+- :arrow_up: Update all deps
+
 ### v10.10.0
 
 - :arrow_up: Update all deps
