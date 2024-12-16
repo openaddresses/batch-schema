@@ -13,13 +13,15 @@ import { RequestValidation } from './types.js';
 import SchemaAPI from './api.js';
 import Docs from './openapi.js';
 
-const ajv = addFormats(new Ajv({
+const ajv = new Ajv({
     strict: false,
     allErrors: true,
     useDefaults: true,
     removeAdditional: 'all',
     coerceTypes: true
-}));
+});
+
+addFormats(ajv);
 
 export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ErrorObject[] };
 
