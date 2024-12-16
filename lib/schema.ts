@@ -6,8 +6,8 @@ import Err from '@openaddresses/batch-error';
 import { Static, Type, TSchema } from '@sinclair/typebox';
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import { Router, RequestHandler } from 'express'
-import Ajv, { ErrorObject } from 'ajv'
-import addFormats from 'ajv-formats'
+import { Ajv, ErrorObject } from 'ajv'
+import addFormatsModule from 'ajv-formats'
 import { RequestValidation } from './types.js';
 
 import SchemaAPI from './api.js';
@@ -21,7 +21,7 @@ const ajv = new Ajv({
     coerceTypes: true
 });
 
-addFormats(ajv);
+addFormatsModule.default(ajv);
 
 export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ErrorObject[] };
 

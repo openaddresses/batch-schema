@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.12.1
+
+- :bug: Fix upstream type issue with default export
+
 ### v10.12.0
 
 - :arrow_up: Update all deps
