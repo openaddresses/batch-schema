@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v10.13.0
+
+- :arrow_up: Update all core deps
+- :rocket: Include type defs in dependencies
+
 ### v10.12.1
 
 - :bug: Fix upstream type issue with default export
