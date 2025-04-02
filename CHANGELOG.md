@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.14.1
+
+- :bug: Use new wildcard format for not_found
+
 ### v10.14.0
 
 - :arrow_up: Update all core deps
