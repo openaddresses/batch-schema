@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.15.0
+
+- :bug: Force `req.query` to be writable
+
 ### v10.14.1
 
 - :bug: Use new wildcard format for not_found

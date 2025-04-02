@@ -121,6 +121,13 @@ export default class Schemas {
             if (opts.body) throw new Error(`Body not allowed`);
 
             const _handler: RequestHandler = (req, res, next) => {
+                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
+                    Object.defineProperty(req, 'query', {
+                        writable: true,
+                        value: { ...req.query },
+                    })
+                }
+
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
@@ -161,6 +168,13 @@ export default class Schemas {
             if (opts.body) throw new Error(`Body not allowed`);
 
             const _handler: RequestHandler = (req, res, next) => {
+                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
+                    Object.defineProperty(req, 'query', {
+                        writable: true,
+                        value: { ...req.query },
+                    })
+                }
+
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
@@ -201,6 +215,13 @@ export default class Schemas {
             const bodyValidation = opts.body && ajv.compile(opts.body);
 
             const _handler: RequestHandler = (req, res, next) => {
+                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
+                    Object.defineProperty(req, 'query', {
+                        writable: true,
+                        value: { ...req.query },
+                    })
+                }
+
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
@@ -242,6 +263,13 @@ export default class Schemas {
             const bodyValidation = opts.body && ajv.compile(opts.body);
 
             const _handler: RequestHandler = (req, res, next) => {
+                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
+                    Object.defineProperty(req, 'query', {
+                        writable: true,
+                        value: { ...req.query },
+                    })
+                }
+
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
@@ -283,6 +311,13 @@ export default class Schemas {
             const bodyValidation = opts.body && ajv.compile(opts.body);
 
             const _handler: RequestHandler = (req, res, next) => {
+                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
+                    Object.defineProperty(req, 'query', {
+                        writable: true,
+                        value: { ...req.query },
+                    })
+                }
+
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
