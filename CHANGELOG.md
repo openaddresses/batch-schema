@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.15.1
+
+- :arrow_up: Update Core Deps
+
 ### v10.15.0
 
 - :bug: Force `req.query` to be writable
