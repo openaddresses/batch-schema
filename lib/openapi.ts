@@ -2,6 +2,7 @@ import { OpenAPIV3 as Doc } from 'openapi-types'
 import { RequestValidation } from './types.js';
 
 export type OpenAPIDocumentInput = {
+    openapi?: string,
     info?: {
         title: string;
         version: string;
@@ -15,6 +16,7 @@ export type OpenAPIDocumentInput = {
 }
 
 export type OpenAPIDocument = {
+    openapi: string,
     info: {
         title: string;
         version: string;
@@ -40,6 +42,8 @@ export default class Docs {
             prefix?: string;
         } = {}
     ) {
+        base.openapi = '3.1.0'
+
         if (!base.paths) {
             base.paths = {};
         }

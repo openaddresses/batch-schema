@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.16.1
+
+- :bug: Add OpenAPI Version
+
 ### v10.16.0
 
 - :rocket: Allow passing `openapi` options to `new Schema()`
