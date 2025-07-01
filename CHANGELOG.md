@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.16.2
+
+- :rocket: Add Security Array Type
+
 ### v10.16.1
 
 - :bug: Add OpenAPI Version
