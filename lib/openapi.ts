@@ -1,25 +1,59 @@
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import { RequestValidation } from './types.js';
 
+export type OpenAPIDocumentInput = {
+    info?: {
+        title: string;
+        version: string;
+        [k: string]: string;
+    },
+    paths?: Record<string, Record<string, unknown>>;
+    components?: {
+        schemas?: Record<string, object>
+        securitySchemes?: Record<string, object>
+    }
+}
+
+export type OpenAPIDocument = {
+    info: {
+        title: string;
+        version: string;
+        [k: string]: string;
+    },
+    paths: Record<string, Record<string, unknown>>,
+    components: {
+        schemas?: Record<string, object>
+        securitySchemes?: Record<string, object>
+    }
+}
+
 /**
  * @class
  */
 export default class Docs {
-    base: Doc.Document;
+    base: OpenAPIDocument;
+    prefix: string;
 
-    constructor(info?: {
-        title: string;
-        version: string;
-        [k: string]: string;
-    }) {
-        this.base = {
-            openapi: '3.0.3',
-            info: info || {
-                title: 'OpenAPI Schema',
-                version: '1.0.0'
-            },
-            paths: {}
-        };
+    constructor(
+        base: OpenAPIDocumentInput = {},
+        opts: {
+            prefix?: string;
+        } = {}
+    ) {
+        if (!base.paths) {
+            base.paths = {};
+        }
+
+        if (!base.components) {
+            base.components = {};
+        }
+
+        if (!base.info) {
+            base.info = { title: 'OpenAPI', version: '1.0.0' };
+        }
+
+        this.base = base as OpenAPIDocument;
+        this.prefix = opts.prefix || '';
     }
 
     push(
@@ -44,7 +78,7 @@ export default class Docs {
             path.push(sec);
         }
 
-        const pathstr = path.join('/');
+        const pathstr = this.prefix + path.join('/');
 
         if (this.base.paths[pathstr] && this.base.paths[pathstr][parsed.method]) throw new Error(`Duplicate Path: ${parsed.method}: ${parsed.path}`);
 

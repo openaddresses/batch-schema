@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v10.16.0
+
+- :rocket: Allow passing `openapi` options to `new Schema()`
+- :arrow_up: Update Core Deps
+
 ### v10.15.1
 
 - :arrow_up: Update Core Deps

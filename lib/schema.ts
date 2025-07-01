@@ -9,7 +9,7 @@ import { Router, RequestHandler } from 'express'
 import { Ajv, ErrorObject } from 'ajv'
 import addFormatsModule from 'ajv-formats'
 import { RequestValidation } from './types.js';
-
+import type { OpenAPIDocumentInput } from './openapi.js'
 import SchemaAPI from './api.js';
 import Docs from './openapi.js';
 
@@ -29,30 +29,43 @@ export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ErrorOb
  * @class
  *
  * @param {Object} router Express Router Object
- * @param {Object} opts Options Object
- * @param {boolean|string} [opts.morgan=true] disable logging with false
- * @param {number} [opts.limit=50] body size limit in mb
+ * @param {Object}          opts Options Object
+ * @param {boolean|string}  [opts.morgan=true] disable logging with false
+ * @param {number}          [opts.limit=50] body size limit in mb
+ * @param {object}          [opts.openapi] OpenAPI Base Document
+ * @param {object}          [opts.prefix] API string Prefix
  *
  * @param {URL} [opts.apidoc] apidoc file location
  */
 export default class Schemas {
     router: Router;
     docs: Docs;
+    prefix: string;
     schemas: Map<string, RequestValidation<any, any, any, any>>
 
-    constructor(router: Router, opts: {
-        logging?: boolean;
-        limit?: number;
-    } = {}) {
+    constructor(
+        router: Router,
+        opts: {
+            prefix?: string;
+            logging?: boolean;
+            limit?: number;
+            openapi?: OpenAPIDocumentInput;
+        } = {}
+    ) {
         if (!router) throw new Error('Router Param Required');
 
         this.router = router;
+
+        this.prefix = opts.prefix || '';
 
         if (opts.logging !== false) this.router.use(morgan('combined'));
         this.router.use(bodyparser.urlencoded({ extended: true }));
         this.router.use(bodyparser.json({ limit: `${opts.limit || 50}mb` }));
 
-        this.docs = new Docs();
+        this.docs = new Docs(opts.openapi, {
+            prefix: this.prefix
+        });
+
         this.schemas = new Map();
     }
 
