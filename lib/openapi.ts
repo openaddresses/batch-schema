@@ -12,7 +12,8 @@ export type OpenAPIDocumentInput = {
     components?: {
         schemas?: Record<string, object>
         securitySchemes?: Record<string, object>
-    }
+    },
+    security?: Array<unknown>
 }
 
 export type OpenAPIDocument = {
@@ -26,7 +27,8 @@ export type OpenAPIDocument = {
     components: {
         schemas?: Record<string, object>
         securitySchemes?: Record<string, object>
-    }
+    },
+    security?: Array<unknown>
 }
 
 /**
