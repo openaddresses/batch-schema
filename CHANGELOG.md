@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.17.1
+
+- :bug: Set Content-Type
+
 ### v10.17.0
 
 - :rocket: Add the ability to specify Error Types

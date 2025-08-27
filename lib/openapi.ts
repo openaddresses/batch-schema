@@ -152,7 +152,16 @@ export default class Docs {
                 document.responses['200'] = response;
             }
 
-            document.responses = Object.assign(document.responses || this.error);
+            for (const code of Object.keys(this.error)) {
+                document.responses[code] = {
+                    description: 'Error Response',
+                    content: {
+                        'application/json': {
+                            schema: this.error[code]
+                        }
+                    }
+                }
+            }
 
             if (schemas.body) {
                 document.requestBody = {
