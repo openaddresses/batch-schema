@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.17.0
+
+- :rocket: Add the ability to specify Error Types
+
 ### v10.16.2
 
 - :rocket: Add Security Array Type
