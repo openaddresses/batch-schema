@@ -34,6 +34,7 @@ export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ErrorOb
  * @param {number}          [opts.limit=50] body size limit in mb
  * @param {object}          [opts.openapi] OpenAPI Base Document
  * @param {object}          [opts.prefix] API string Prefix
+ * @param {object}          [opts.error] Error Schemas
  *
  * @param {URL} [opts.apidoc] apidoc file location
  */
@@ -41,6 +42,7 @@ export default class Schemas {
     router: Router;
     docs: Docs;
     prefix: string;
+    error: Record<number, TSchema>;
     schemas: Map<string, RequestValidation<any, any, any, any>>
 
     constructor(
@@ -49,6 +51,7 @@ export default class Schemas {
             prefix?: string;
             logging?: boolean;
             limit?: number;
+            error?: Record<number, TSchema>;
             openapi?: OpenAPIDocumentInput;
         } = {}
     ) {
@@ -62,8 +65,15 @@ export default class Schemas {
         this.router.use(bodyparser.urlencoded({ extended: true }));
         this.router.use(bodyparser.json({ limit: `${opts.limit || 50}mb` }));
 
+        if (opts.error) {
+            this.error = opts.error;
+        } else {
+            this.error = {};
+        }
+
         this.docs = new Docs(opts.openapi, {
-            prefix: this.prefix
+            prefix: this.prefix,
+            error: this.error
         });
 
         this.schemas = new Map();
