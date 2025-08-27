@@ -1,5 +1,6 @@
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import { RequestValidation } from './types.js';
+import { TSchema } from '@sinclair/typebox';
 
 export type OpenAPIDocumentInput = {
     openapi?: string,
@@ -37,17 +38,25 @@ export type OpenAPIDocument = {
 export default class Docs {
     base: OpenAPIDocument;
     prefix: string;
+    error: Record<string, TSchema>;
 
     constructor(
         base: OpenAPIDocumentInput = {},
         opts: {
             prefix?: string;
+            error?: Record<string, TSchema>;
         } = {}
     ) {
         base.openapi = '3.1.0'
 
         if (!base.paths) {
             base.paths = {};
+        }
+
+        if (opts.error) {
+            this.error = opts.error;
+        } else {
+            this.error = {};
         }
 
         if (!base.components) {
@@ -142,6 +151,8 @@ export default class Docs {
                 }
                 document.responses['200'] = response;
             }
+
+            document.responses = Object.assign(document.responses || this.error);
 
             if (schemas.body) {
                 document.requestBody = {
