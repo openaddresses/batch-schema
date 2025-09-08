@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.18.0
+
+- :rocket: Surface Path Types in OpenAPI Output
+
 ### v10.17.1
 
 - :bug: Set Content-Type
