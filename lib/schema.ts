@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import type { Request, Response } from 'express';
 import path from 'node:path';
 import morgan from 'morgan';
 import bodyparser from 'body-parser';
@@ -30,7 +31,7 @@ export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ErrorOb
  *
  * @param {Object} router Express Router Object
  * @param {Object}          opts Options Object
- * @param {boolean|string}  [opts.morgan=true] disable logging with false
+ * @param {object}          [opts.logging] disable logging with false
  * @param {number}          [opts.limit=50] body size limit in mb
  * @param {object}          [opts.openapi] OpenAPI Base Document
  * @param {object}          [opts.prefix] API string Prefix
@@ -49,7 +50,7 @@ export default class Schemas {
         router: Router,
         opts: {
             prefix?: string;
-            logging?: boolean;
+            logging?: boolean | morgan.Options<Request, Response>;
             limit?: number;
             error?: Record<number, TSchema>;
             openapi?: OpenAPIDocumentInput;
@@ -61,7 +62,11 @@ export default class Schemas {
 
         this.prefix = opts.prefix || '';
 
-        if (opts.logging !== false) this.router.use(morgan('combined'));
+        if (opts.logging !== false) {
+            const morganOptions: morgan.Options<Request, Response> = opts.logging && typeof opts.logging === 'object' ? opts.logging : {};
+            this.router.use(morgan('combined', morganOptions));
+        }
+
         this.router.use(bodyparser.urlencoded({ extended: true }));
         this.router.use(bodyparser.json({ limit: `${opts.limit || 50}mb` }));
 

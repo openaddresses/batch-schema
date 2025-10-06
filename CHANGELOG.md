@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.19.0
+
+- :rocket: Allow passing through morgan options
+
 ### v10.18.0
 
 - :rocket: Surface Path Types in OpenAPI Output
