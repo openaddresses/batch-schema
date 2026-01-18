@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.20.0
+
+- :arrow_up: Update Core Types
+
 ### v10.19.0
 
 - :rocket: Allow passing through morgan options
