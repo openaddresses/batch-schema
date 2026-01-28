@@ -166,6 +166,7 @@ export default class Schemas {
                     obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
                     if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
                         res.status(400);
+                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
                         return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
                     } else {
                         return json.call(this, obj);
@@ -213,6 +214,7 @@ export default class Schemas {
                     obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
                     if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
                         res.status(400);
+                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
                         return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
                     } else {
                         return json.call(this, obj);
@@ -261,6 +263,7 @@ export default class Schemas {
                     obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
                     if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
                         res.status(400);
+                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
                         return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
                     } else {
                         return json.call(this, obj);
@@ -309,6 +312,7 @@ export default class Schemas {
                     obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
                     if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
                         res.status(400);
+                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
                         return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
                     } else {
                         return json.call(this, obj);
@@ -357,6 +361,7 @@ export default class Schemas {
                     obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
                     if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
                         res.status(400);
+                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
                         return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
                     } else {
                         return json.call(this, obj);

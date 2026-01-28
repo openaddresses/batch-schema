@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.21.0
+
+- :rocket: Surface outgoing schema errors in the logs
+
 ### v10.20.0
 
 - :arrow_up: Update Core Types
