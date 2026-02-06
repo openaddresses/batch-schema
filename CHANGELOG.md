@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.22.0
+
+- :rocket: Increase usefulness of schema error messages by including the schema path and the value that failed validation
+
 ### v10.21.0
 
 - :rocket: Surface outgoing schema errors in the logs
