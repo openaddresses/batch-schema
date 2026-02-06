@@ -159,7 +159,11 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) {
+                    return Err.respond(new Err(
+                        400, null, `Validation Error GET ${path}`
+                    ), res, errors);
+                }
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -207,7 +211,11 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) {
+                    return Err.respond(new Err(
+                        400, null, `Validation Error DELETE ${path}`
+                    ), res, errors);
+                }
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -256,7 +264,11 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) {
+                    return Err.respond(new Err(
+                        400, null, `Validation Error POST ${path}`
+                    ), res, errors);
+                }
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -305,7 +317,11 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) {
+                    return Err.respond(new Err(
+                        400, null, `Validation Error PATCH ${path}`
+                    ), res, errors);
+                }
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -354,7 +370,11 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) {
+                    return Err.respond(new Err(
+                        400, null, `Validation Error PUT ${path}`
+                    ), res, errors);
+                }
 
                 const json = res.json;
                 res.json = function(obj) {
