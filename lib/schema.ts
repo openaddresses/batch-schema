@@ -182,7 +182,9 @@ export default class Schemas {
 
             this.router.get(path, _handler);
         } catch (err) {
-            throw new Error(`Get: ${path}: ` + err)
+            throw new Error(`Get: ${path}: ` + err, {
+                cause: err
+            })
         }
     }
 
@@ -234,7 +236,9 @@ export default class Schemas {
 
             this.router.delete(path, _handler);
         } catch (err) {
-            throw new Error(`Delete: ${path}: ` + String(err))
+            throw new Error(`Delete: ${path}: ` + String(err), {
+                cause: err
+            })
         }
     }
 
@@ -287,7 +291,9 @@ export default class Schemas {
 
             this.router.post(path, _handler);
         } catch (err) {
-            throw new Error(`Post: ${path}: ` + String(err))
+            throw new Error(`Post: ${path}: ` + String(err), {
+                cause: err
+            })
         }
     }
 
@@ -340,7 +346,9 @@ export default class Schemas {
 
             this.router.patch(path, _handler);
         } catch (err) {
-            throw new Error(`Patch: ${path}: ` + String(err))
+            throw new Error(`Patch: ${path}: ` + String(err), {
+                cause: err
+            })
         }
     }
 
@@ -393,7 +401,9 @@ export default class Schemas {
 
             this.router.put(path, _handler);
         } catch (err) {
-            throw new Error(`Put: ${path}: ` + String(err))
+            throw new Error(`Put: ${path}: ` + String(err), {
+                cause: err
+            })
         }
     }
 

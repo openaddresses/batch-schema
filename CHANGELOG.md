@@ -10,6 +10,11 @@
 
 ## Version History
 
+### v10.23.0
+
+- :rocket: Update Error Cause
+- :arrow_up: Update Core Deps
+
 ### v10.22.0
 
 - :rocket: Increase usefulness of schema error messages by including the schema path and the value that failed validation
