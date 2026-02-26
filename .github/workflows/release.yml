@@ -1,32 +1,41 @@
 name: NPM Release
 
 on:
-    push:
-        tags:
-        - '*'
+  push:
+    tags:
+      - '*'
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
-            - name: Get tag
-              id: tag
-              uses: dawidd6/action-get-tag@v1
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
 
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 18
-                  registry-url: https://registry.npmjs.org/
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
 
-            - name: npm install
-              run: npm install
+      - name: npm install
+        run: npm install
 
-            - name: npm build
-              run: npm run build
+      - name: npm build
+        run: npm run build
 
-            - name: npm publish
-              run: npm publish
-              env:
-                  NPM_TOKEN: ${{ secrets.NPM_SECRET }}
+      - name: npm publish
+        run: npm publish --provenance --access public
+
+      - name: Generate CHANGELOG
+        run: grep -Pzo "### ${{steps.tag.outputs.tag}}(?s).*?(?=###)" CHANGELOG.md > RELEASE
+
+      - name: Github Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE
