@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.23.1
+
+- :rocket: Update GH Actions Release
+
 ### v10.23.0
 
 - :rocket: Update Error Cause
