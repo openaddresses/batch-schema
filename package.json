@@ -6,7 +6,10 @@
     "types": "index.ts",
     "version": "10.23.0",
     "description": "Strongly Validated JSON Schema support for address",
-    "repository": "git@github.com:openaddresses/batch-schema",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/openaddresses/batch-schema.git"
+    },
     "author": "ingalls <nick@ingalls.ca>",
     "license": "MIT",
     "private": false,
