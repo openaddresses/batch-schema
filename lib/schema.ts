@@ -4,12 +4,15 @@ import path from 'node:path';
 import morgan from 'morgan';
 import bodyparser from 'body-parser';
 import Err from '@openaddresses/batch-error';
-import { Static, Type, TSchema } from '@sinclair/typebox';
+import { Type } from '@sinclair/typebox';
+import type { Static, TSchema } from '@sinclair/typebox';
 import { OpenAPIV3 as Doc } from 'openapi-types'
-import { Router, RequestHandler } from 'express'
-import { Ajv, ErrorObject } from 'ajv'
+import { Router } from 'express'
+import type { RequestHandler } from 'express'
+import { Ajv } from 'ajv'
+import type { ErrorObject } from 'ajv'
 import addFormatsModule from 'ajv-formats'
-import { RequestValidation } from './types.js';
+import type { RequestValidation } from './types.js';
 import type { OpenAPIDocumentInput } from './openapi.js'
 import SchemaAPI from './api.js';
 import Docs from './openapi.js';
@@ -44,7 +47,7 @@ export default class Schemas {
     docs: Docs;
     prefix: string;
     error: Record<number, TSchema>;
-    schemas: Map<string, RequestValidation<any, any, any, any>>
+    schemas: Map<string, RequestValidation<TSchema, TSchema, TSchema, TSchema>>
 
     constructor(
         router: Router,
@@ -159,11 +162,7 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) {
-                    return Err.respond(new Err(
-                        400, null, `Validation Error GET ${path}`
-                    ), res, errors);
-                }
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -182,9 +181,7 @@ export default class Schemas {
 
             this.router.get(path, _handler);
         } catch (err) {
-            throw new Error(`Get: ${path}: ` + err, {
-                cause: err
-            })
+            throw new Error(`Get: ${path}: ` + err, { cause: err })
         }
     }
 
@@ -213,11 +210,7 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) {
-                    return Err.respond(new Err(
-                        400, null, `Validation Error DELETE ${path}`
-                    ), res, errors);
-                }
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -236,9 +229,7 @@ export default class Schemas {
 
             this.router.delete(path, _handler);
         } catch (err) {
-            throw new Error(`Delete: ${path}: ` + String(err), {
-                cause: err
-            })
+            throw new Error(`Delete: ${path}: ` + String(err), { cause: err })
         }
     }
 
@@ -268,11 +259,7 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) {
-                    return Err.respond(new Err(
-                        400, null, `Validation Error POST ${path}`
-                    ), res, errors);
-                }
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -291,9 +278,7 @@ export default class Schemas {
 
             this.router.post(path, _handler);
         } catch (err) {
-            throw new Error(`Post: ${path}: ` + String(err), {
-                cause: err
-            })
+            throw new Error(`Post: ${path}: ` + String(err), { cause: err })
         }
     }
 
@@ -323,11 +308,7 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) {
-                    return Err.respond(new Err(
-                        400, null, `Validation Error PATCH ${path}`
-                    ), res, errors);
-                }
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -346,9 +327,7 @@ export default class Schemas {
 
             this.router.patch(path, _handler);
         } catch (err) {
-            throw new Error(`Patch: ${path}: ` + String(err), {
-                cause: err
-            })
+            throw new Error(`Patch: ${path}: ` + String(err), { cause: err })
         }
     }
 
@@ -378,11 +357,7 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) {
-                    return Err.respond(new Err(
-                        400, null, `Validation Error PUT ${path}`
-                    ), res, errors);
-                }
+                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -401,9 +376,7 @@ export default class Schemas {
 
             this.router.put(path, _handler);
         } catch (err) {
-            throw new Error(`Put: ${path}: ` + String(err), {
-                cause: err
-            })
+            throw new Error(`Put: ${path}: ` + String(err), { cause: err })
         }
     }
 

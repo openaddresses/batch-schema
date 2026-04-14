@@ -1,4 +1,5 @@
-import test from 'tape';
+import { describe, it, before, after } from 'node:test';
+import assert from 'node:assert';
 import express from 'express';
 import Schema from '../index.js';
 
@@ -7,21 +8,25 @@ const schema = new Schema(express.Router());
 
 app.use('/api', schema.router);
 
-let server;
+let server: ReturnType<typeof app.listen>;
 
-test('start', (t) => {
-    server = app.listen(2000, async () => {
-        await schema.api();
-        t.end();
+describe('Schema Server', () => {
+    before((_, done) => {
+        server = app.listen(2000, async () => {
+            await schema.api();
+            done();
+        });
     });
-});
 
-test('GET: api/schema', async (t) => {
-    try {
+    after(() => {
+        server.close();
+    });
+
+    it('GET: api/schema', async () => {
         const res = await fetch('http://localhost:2000/api/schema');
         const body = await res.json();
 
-        t.deepEquals(body, {
+        assert.deepStrictEqual(body, {
             'GET /schema':{
                 body: false,
                 query: true,
@@ -33,79 +38,46 @@ test('GET: api/schema', async (t) => {
                 res: true
             }
         });
-    } catch (err) {
-        t.error(err, 'no error');
-    }
+    });
 
-    t.end();
-});
-
-test('GET: api/schema?method=FAKE', async (t) => {
-    try {
+    it('GET: api/schema?method=FAKE', async () => {
         const res = await fetch('http://localhost:2000/api/schema?method=fake');
 
-        t.notOk(res.ok);
+        assert.strictEqual(res.ok, false);
 
-        t.deepEquals(await res.json(), {
+        assert.deepStrictEqual(await res.json(), {
             status: 400,
-            message: 'Validation Error GET /schema',
+            message: 'Validation Error',
             messages: [
                 {"type":"Query","errors":[{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/0/const","keyword":"const","params":{"allowedValue":"GET"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/1/const","keyword":"const","params":{"allowedValue":"PUT"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/2/const","keyword":"const","params":{"allowedValue":"POST"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/3/const","keyword":"const","params":{"allowedValue":"DELETE"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/4/const","keyword":"const","params":{"allowedValue":"OPTIONS"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/5/const","keyword":"const","params":{"allowedValue":"HEAD"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/6/const","keyword":"const","params":{"allowedValue":"PATCH"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf/7/const","keyword":"const","params":{"allowedValue":"TRACE"},"message":"must be equal to constant"},{"instancePath":"/method","schemaPath":"#/properties/method/anyOf","keyword":"anyOf","params":{},"message":"must match a schema in anyOf"}]}
             ]
         });
-    } catch (err) {
-        t.error(err);
-    }
+    });
 
-    t.end();
-});
-
-test('GET: api/schema?method=GET', async (t) => {
-    try {
+    it('GET: api/schema?method=GET', async () => {
         const res = await fetch('http://localhost:2000/api/schema?method=GET');
-        t.notOk(res.ok);
-        t.deepEquals(await res.json(), {
+        assert.strictEqual(res.ok, false);
+        assert.deepStrictEqual(await res.json(), {
             status: 400,
             message: 'url & method params must be used together',
             messages: []
         });
-    } catch (err) {
-        t.error(err);
-    }
+    });
 
-    t.end();
-});
-test('GET: api/schema?url=123', async (t) => {
-    try {
+    it('GET: api/schema?url=123', async () => {
         const res = await fetch('http://localhost:2000/api/schema?url=123');
-        t.notOk(res.ok);
-        t.deepEquals(await res.json(), {
+        assert.strictEqual(res.ok, false);
+        assert.deepStrictEqual(await res.json(), {
             status: 400,
             message: 'url & method params must be used together',
             messages: []
         });
-    } catch (err) {
-        t.error(err);
-    }
+    });
 
-    t.end();
-});
-
-test('GET: api/schema?method=GET&url=/schema', async (t) => {
-    try {
+    it('GET: api/schema?method=GET&url=/schema', async () => {
         const res = await fetch('http://localhost:2000/api/schema?method=GET&url=/schema');
 
-        t.equals(res.status, 200, 'http: 200');
-        t.deepEquals(Object.keys(await res.json()).sort(), ['query', 'res'].sort());
-
-    } catch (err) {
-        t.error(err, 'no error');
-    }
-
-    t.end();
-});
-
-test('End', async (t) => {
-    await server.close();
-    t.end();
+        assert.strictEqual(res.status, 200, 'http: 200');
+        assert.deepStrictEqual(Object.keys(await res.json()).sort(), ['query', 'res'].sort());
+    });
 });

@@ -1,4 +1,4 @@
-import { TSchema } from '@sinclair/typebox';
+import type { TSchema } from '@sinclair/typebox';
 
 export type RequestValidation<
     TParams extends TSchema,

@@ -1,6 +1,6 @@
 import { OpenAPIV3 as Doc } from 'openapi-types'
-import { RequestValidation } from './types.js';
-import { TSchema } from '@sinclair/typebox';
+import type { RequestValidation } from './types.js';
+import type { TSchema } from '@sinclair/typebox';
 
 export type OpenAPIDocumentInput = {
     openapi?: string,
@@ -76,7 +76,7 @@ export default class Docs {
             method: Doc.HttpMethods
             path: string;
         },
-        schemas: RequestValidation<any, any, any, any>
+        schemas: RequestValidation<TSchema, TSchema, TSchema, TSchema>
     ): void {
         const path: Array<string> = [];
 

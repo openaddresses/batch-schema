@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.24.0
+
+- :rocket: Update to Typescript 6.0
+
 ### v10.23.2
 
 - :rocket: Update GH Actions Release
