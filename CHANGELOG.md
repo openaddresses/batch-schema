@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.24.1
+
+- :bug: Restore per-route error message
+
 ### v10.24.0
 
 - :rocket: Update to Typescript 6.0
