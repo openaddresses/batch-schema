@@ -49,6 +49,10 @@ export default class Schemas {
     error: Record<number, TSchema>;
     schemas: Map<string, RequestValidation<TSchema, TSchema, TSchema, TSchema>>
 
+    validationError(method: Doc.HttpMethods, path: string) {
+        return new Err(400, null, `Validation Error ${String(method).toUpperCase()} ${path}`);
+    }
+
     constructor(
         router: Router,
         opts: {
@@ -162,7 +166,7 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.GET, path), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -210,7 +214,7 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.DELETE, path), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -259,7 +263,7 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.POST, path), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -308,7 +312,7 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.PATCH, path), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
@@ -357,7 +361,7 @@ export default class Schemas {
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
                 if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(new Err(400, null, 'Validation Error'), res, errors);
+                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.PUT, path), res, errors);
 
                 const json = res.json;
                 res.json = function(obj) {
