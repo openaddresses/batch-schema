@@ -7,6 +7,7 @@ export type RequestValidation<
     TResponse extends TSchema
 > = {
   private?: boolean;
+  deprecated?: boolean;
   name?: string;
   group?: string;
   description?: string;

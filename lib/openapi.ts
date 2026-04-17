@@ -102,6 +102,7 @@ export default class Docs {
 
             const document: Doc.OperationObject = {
                 summary: schemas.description || 'No Description',
+                deprecated: schemas.deprecated,
                 parameters: [],
                 tags: [schemas.group || 'Default'],
                 responses: {}

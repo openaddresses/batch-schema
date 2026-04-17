@@ -1,6 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import express from 'express';
+import { Type } from '@sinclair/typebox';
 import Schema from '../index.js';
 
 const app = express();
@@ -13,6 +14,16 @@ let server: ReturnType<typeof app.listen>;
 describe('Schema Server', () => {
     before((_, done) => {
         server = app.listen(2000, async () => {
+            await schema.get('/legacy', {
+                deprecated: true,
+                description: 'Legacy route',
+                res: Type.Object({
+                    ok: Type.Boolean()
+                })
+            }, async (_, res) => {
+                res.json({ ok: true });
+            });
+
             await schema.api();
             done();
         });
@@ -27,6 +38,11 @@ describe('Schema Server', () => {
         const body = await res.json();
 
         assert.deepStrictEqual(body, {
+            'GET /legacy': {
+                body: false,
+                query: false,
+                res: true
+            },
             'GET /schema':{
                 body: false,
                 query: true,
@@ -78,6 +94,33 @@ describe('Schema Server', () => {
         const res = await fetch('http://localhost:2000/api/schema?method=GET&url=/schema');
 
         assert.strictEqual(res.status, 200, 'http: 200');
-        assert.deepStrictEqual(Object.keys(await res.json()).sort(), ['query', 'res'].sort());
+        assert.deepStrictEqual(Object.keys(await res.json()).sort(), ['deprecated', 'query', 'res'].sort());
+    });
+
+    it('GET: api/schema?method=GET&url=/legacy', async () => {
+        const res = await fetch('http://localhost:2000/api/schema?method=GET&url=/legacy');
+
+        assert.strictEqual(res.status, 200, 'http: 200');
+        assert.deepStrictEqual(await res.json(), {
+            deprecated: true,
+            res: {
+                type: 'object',
+                properties: {
+                    ok: {
+                        type: 'boolean'
+                    }
+                },
+                required: ['ok']
+            }
+        });
+    });
+
+    it('GET: api/openapi marks deprecated operations', async () => {
+        const res = await fetch('http://localhost:2000/api/openapi');
+        const body = await res.json();
+
+        assert.strictEqual(res.status, 200, 'http: 200');
+        assert.strictEqual(body.paths['/legacy'].get.deprecated, true);
+        assert.strictEqual(body.paths['/schema'].get.deprecated, false);
     });
 });

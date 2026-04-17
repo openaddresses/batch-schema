@@ -91,6 +91,15 @@ export default class Schemas {
         this.schemas = new Map();
     }
 
+    normalizeValidation<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {}
+    ): RequestValidation<TParams, TQuery, TBody, TResponse> {
+        return {
+            deprecated: false,
+            ...opts
+        };
+    }
+
     async api() {
         await SchemaAPI(this);
     }
@@ -147,13 +156,15 @@ export default class Schemas {
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
-            this.docs.push({ method: Doc.HttpMethods.GET, path: path }, opts);
-            this.schemas.set(`GET ${path}`, opts);
+            const validation = this.normalizeValidation(opts);
 
-            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
-            const paramsValidation = opts.params && ajv.compile(opts.params);
-            const queryValidation = opts.query && ajv.compile(opts.query);
-            if (opts.body) throw new Error(`Body not allowed`);
+            this.docs.push({ method: Doc.HttpMethods.GET, path: path }, validation);
+            this.schemas.set(`GET ${path}`, validation);
+
+            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
+            const paramsValidation = validation.params && ajv.compile(validation.params);
+            const queryValidation = validation.query && ajv.compile(validation.query);
+            if (validation.body) throw new Error(`Body not allowed`);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -195,13 +206,15 @@ export default class Schemas {
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
-            this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, opts);
-            this.schemas.set(`DELETE ${path}`, opts);
+            const validation = this.normalizeValidation(opts);
 
-            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
-            const paramsValidation = opts.params && ajv.compile(opts.params);
-            const queryValidation = opts.query && ajv.compile(opts.query);
-            if (opts.body) throw new Error(`Body not allowed`);
+            this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, validation);
+            this.schemas.set(`DELETE ${path}`, validation);
+
+            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
+            const paramsValidation = validation.params && ajv.compile(validation.params);
+            const queryValidation = validation.query && ajv.compile(validation.query);
+            if (validation.body) throw new Error(`Body not allowed`);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -243,13 +256,15 @@ export default class Schemas {
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
-            this.docs.push({ method: Doc.HttpMethods.POST, path: path }, opts);
-            this.schemas.set(`POST ${path}`, opts);
+            const validation = this.normalizeValidation(opts);
 
-            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
-            const paramsValidation = opts.params && ajv.compile(opts.params);
-            const queryValidation = opts.query && ajv.compile(opts.query);
-            const bodyValidation = opts.body && ajv.compile(opts.body);
+            this.docs.push({ method: Doc.HttpMethods.POST, path: path }, validation);
+            this.schemas.set(`POST ${path}`, validation);
+
+            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
+            const paramsValidation = validation.params && ajv.compile(validation.params);
+            const queryValidation = validation.query && ajv.compile(validation.query);
+            const bodyValidation = validation.body && ajv.compile(validation.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -292,13 +307,15 @@ export default class Schemas {
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
-            this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, opts);
-            this.schemas.set(`PATCH ${path}`, opts);
+            const validation = this.normalizeValidation(opts);
 
-            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
-            const paramsValidation = opts.params && ajv.compile(opts.params);
-            const queryValidation = opts.query && ajv.compile(opts.query);
-            const bodyValidation = opts.body && ajv.compile(opts.body);
+            this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, validation);
+            this.schemas.set(`PATCH ${path}`, validation);
+
+            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
+            const paramsValidation = validation.params && ajv.compile(validation.params);
+            const queryValidation = validation.query && ajv.compile(validation.query);
+            const bodyValidation = validation.body && ajv.compile(validation.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -341,13 +358,15 @@ export default class Schemas {
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
         try {
-            this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, opts);
-            this.schemas.set(`PUT ${path}`, opts);
+            const validation = this.normalizeValidation(opts);
 
-            const resValidation = opts.res && !(opts.res instanceof Type.Any) && !(opts.res instanceof Type.Unknown) && ajv.compile(opts.res);
-            const paramsValidation = opts.params && ajv.compile(opts.params);
-            const queryValidation = opts.query && ajv.compile(opts.query);
-            const bodyValidation = opts.body && ajv.compile(opts.body);
+            this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, validation);
+            this.schemas.set(`PUT ${path}`, validation);
+
+            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
+            const paramsValidation = validation.params && ajv.compile(validation.params);
+            const queryValidation = validation.query && ajv.compile(validation.query);
+            const bodyValidation = validation.body && ajv.compile(validation.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -396,6 +415,7 @@ export default class Schemas {
 
 
     query(method: Doc.HttpMethods, url: string): {
+        deprecated?: boolean;
         query?: object;
         body?: object;
         res?: object;
@@ -407,6 +427,7 @@ export default class Schemas {
         const schema = JSON.parse(JSON.stringify(this.schemas.get(`${method} ${url}`)));
 
         return {
+            deprecated: schema.deprecated,
             query: schema.query,
             body: schema.body,
             res: schema.res

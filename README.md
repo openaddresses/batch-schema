@@ -41,6 +41,7 @@ async function server() {
         res: Type.Object({
             token: Type.String()
         }),
+        deprecated: false,
     }, (req, res) => {
         return res.json({
             token: 'I only return if the request meets the query & body schemas'
@@ -48,6 +49,8 @@ async function server() {
     });
 }
 ```
+
+Set `deprecated: true` on a route schema to mark the generated OpenAPI operation as deprecated.
 
 ## API
 

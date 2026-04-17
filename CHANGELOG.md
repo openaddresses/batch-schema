@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.25.0
+
+- :rocket: Add `deprecated` Boolean
+
 ### v10.24.1
 
 - :bug: Restore per-route error message
