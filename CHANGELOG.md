@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.26.0
+
+- :rocket: Allow non-json content-type
+
 ### v10.25.0
 
 - :rocket: Add `deprecated` Boolean

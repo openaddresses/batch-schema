@@ -52,6 +52,84 @@ async function server() {
 
 Set `deprecated: true` on a route schema to mark the generated OpenAPI operation as deprecated.
 
+## Request Body Validation
+
+The `body` option accepts two forms.
+
+### Single TypeBox schema (legacy / shorthand)
+
+A bare schema is treated as `application/json`:
+
+```js
+await schema.post('/login', {
+    body: Type.Object({
+        username: Type.String(),
+        password: Type.String()
+    }),
+    res: Type.Object({ token: Type.String() })
+}, handler);
+```
+
+### Map keyed by content-type
+
+Provide a record where each key is a Content-Type. The value can be:
+
+- a `TSchema` — body is validated against the schema
+- `true` — body is accepted but not validated (useful for XML / CSV / binary)
+- a `{ schema, example, examples }` object — `example` and `examples` are
+  forwarded to the OpenAPI media type for documentation
+
+Wildcards are supported in keys: `text/*`, `application/*`, `*/*`. An exact
+content-type match always wins over a wildcard.
+
+```js
+await schema.post('/ingest', {
+    body: {
+        // Strict JSON validation
+        'application/json': Type.Object({ name: Type.String() }),
+
+        // Any XML accepted
+        'text/xml': true,
+
+        // Wildcard family — matches text/csv, text/plain, etc.
+        'text/*': true,
+
+        // Schema + Swagger UI examples
+        'application/vnd.api+json': {
+            schema: Type.Object({ data: Type.Any() }),
+            example: { data: { id: '1' } },
+            examples: {
+                primary:   { summary: 'Primary',   value: { data: { id: '1' } } },
+                secondary: { summary: 'Secondary', value: { data: { id: '2' } } }
+            }
+        }
+    },
+    res: Type.Any()
+}, handler);
+```
+
+If a request arrives with a Content-Type that is not listed (and is not
+covered by a wildcard), the route responds with HTTP 400 and a
+`Content-Type ... not supported` message — the handler is not invoked.
+
+For non-JSON content-types the body parser exposes the raw payload on
+`req.body` as a string (`text/*`, `application/xml`, `application/*+xml`)
+or a `Buffer` (`application/octet-stream`).
+
+### Optional bodies
+
+Set `bodyRequired: false` to allow requests with no body / no Content-Type.
+When a body *is* sent it is still validated against the matching schema,
+and the OpenAPI document marks `requestBody.required` as `false`.
+
+```js
+await schema.post('/maybe', {
+    body: Type.Object({ note: Type.String() }),
+    bodyRequired: false,
+    res: Type.Object({ ok: Type.Boolean() })
+}, handler);
+```
+
 ## API
 
 ```js

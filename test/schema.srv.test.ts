@@ -24,6 +24,76 @@ describe('Schema Server', () => {
                 res.json({ ok: true });
             });
 
+            await schema.post('/json-only', {
+                description: 'Backwards compatible JSON body',
+                body: Type.Object({
+                    name: Type.String()
+                }),
+                res: Type.Object({ ok: Type.Boolean() })
+            }, async (req, res) => {
+                res.json({ ok: typeof req.body.name === 'string' });
+            });
+
+            await schema.post('/multi-body', {
+                description: 'Multi content-type body',
+                body: {
+                    'application/json': Type.Object({ name: Type.String() }),
+                    'text/xml': true
+                },
+                res: Type.Object({
+                    contentType: Type.String(),
+                    body: Type.Any()
+                })
+            }, async (req, res) => {
+                res.json({
+                    contentType: (req.headers['content-type'] || '').split(';')[0],
+                    body: req.body
+                });
+            });
+
+            await schema.post('/wildcard-body', {
+                description: 'Wildcard content-type body',
+                body: {
+                    'application/json': Type.Object({ name: Type.String() }),
+                    'text/*': true
+                },
+                res: Type.Object({
+                    contentType: Type.String(),
+                    body: Type.Any()
+                })
+            }, async (req, res) => {
+                res.json({
+                    contentType: (req.headers['content-type'] || '').split(';')[0],
+                    body: req.body
+                });
+            });
+
+            await schema.post('/optional-body', {
+                description: 'Optional body',
+                body: Type.Object({ name: Type.String() }),
+                bodyRequired: false,
+                res: Type.Object({ ok: Type.Boolean() })
+            }, async (_req, res) => {
+                res.json({ ok: true });
+            });
+
+            await schema.post('/with-examples', {
+                description: 'Body with examples in OpenAPI',
+                body: {
+                    'application/json': {
+                        schema: Type.Object({ name: Type.String() }),
+                        example: { name: 'sample' },
+                        examples: {
+                            primary: { summary: 'Primary', value: { name: 'alice' } },
+                            secondary: { summary: 'Secondary', value: { name: 'bob' } }
+                        }
+                    }
+                },
+                res: Type.Object({ ok: Type.Boolean() })
+            }, async (_req, res) => {
+                res.json({ ok: true });
+            });
+
             await schema.api();
             done();
         });
@@ -40,6 +110,31 @@ describe('Schema Server', () => {
         assert.deepStrictEqual(body, {
             'GET /legacy': {
                 body: false,
+                query: false,
+                res: true
+            },
+            'POST /json-only': {
+                body: true,
+                query: false,
+                res: true
+            },
+            'POST /multi-body': {
+                body: true,
+                query: false,
+                res: true
+            },
+            'POST /wildcard-body': {
+                body: true,
+                query: false,
+                res: true
+            },
+            'POST /optional-body': {
+                body: true,
+                query: false,
+                res: true
+            },
+            'POST /with-examples': {
+                body: true,
                 query: false,
                 res: true
             },
@@ -122,5 +217,154 @@ describe('Schema Server', () => {
         assert.strictEqual(res.status, 200, 'http: 200');
         assert.strictEqual(body.paths['/legacy'].get.deprecated, true);
         assert.strictEqual(body.paths['/schema'].get.deprecated, false);
+    });
+
+    it('POST: /json-only with valid JSON body (backwards compat)', async () => {
+        const res = await fetch('http://localhost:2000/api/json-only', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'foo' })
+        });
+        assert.strictEqual(res.status, 200);
+        assert.deepStrictEqual(await res.json(), { ok: true });
+    });
+
+    it('POST: /multi-body with application/json', async () => {
+        const res = await fetch('http://localhost:2000/api/multi-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'foo' })
+        });
+        assert.strictEqual(res.status, 200);
+        assert.deepStrictEqual(await res.json(), {
+            contentType: 'application/json',
+            body: { name: 'foo' }
+        });
+    });
+
+    it('POST: /multi-body with text/xml (true => no validation)', async () => {
+        const res = await fetch('http://localhost:2000/api/multi-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/xml' },
+            body: '<root><a>1</a></root>'
+        });
+        assert.strictEqual(res.status, 200);
+        assert.deepStrictEqual(await res.json(), {
+            contentType: 'text/xml',
+            body: '<root><a>1</a></root>'
+        });
+    });
+
+    it('POST: /multi-body with unsupported content-type returns 400', async () => {
+        const res = await fetch('http://localhost:2000/api/multi-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: 'hello'
+        });
+        assert.strictEqual(res.status, 400);
+        const body = await res.json();
+        assert.strictEqual(body.status, 400);
+        assert.match(body.message, /Content-Type text\/plain not supported/);
+    });
+
+    it('POST: /multi-body with invalid JSON body fails validation', async () => {
+        const res = await fetch('http://localhost:2000/api/multi-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        assert.strictEqual(res.status, 400);
+        const body = await res.json();
+        assert.strictEqual(body.message, 'Validation Error POST /multi-body');
+    });
+
+    it('GET: api/openapi documents multiple content types', async () => {
+        const res = await fetch('http://localhost:2000/api/openapi');
+        const body = await res.json();
+
+        assert.deepStrictEqual(
+            Object.keys(body.paths['/multi-body'].post.requestBody.content).sort(),
+            ['application/json', 'text/xml']
+        );
+        assert.deepStrictEqual(
+            body.paths['/multi-body'].post.requestBody.content['text/xml'],
+            { schema: {} }
+        );
+        assert.strictEqual(
+            body.paths['/json-only'].post.requestBody.content['application/json'].schema.type,
+            'object'
+        );
+    });
+
+    it('POST: /wildcard-body matches text/* with text/csv', async () => {
+        const res = await fetch('http://localhost:2000/api/wildcard-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/csv' },
+            body: 'a,b,c\n1,2,3'
+        });
+        assert.strictEqual(res.status, 200);
+        assert.deepStrictEqual(await res.json(), {
+            contentType: 'text/csv',
+            body: 'a,b,c\n1,2,3'
+        });
+    });
+
+    it('POST: /wildcard-body still validates application/json strictly', async () => {
+        const res = await fetch('http://localhost:2000/api/wildcard-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'foo' })
+        });
+        assert.strictEqual(res.status, 200);
+    });
+
+    it('POST: /wildcard-body rejects unsupported family', async () => {
+        const res = await fetch('http://localhost:2000/api/wildcard-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/png' },
+            body: 'binary'
+        });
+        assert.strictEqual(res.status, 400);
+        const body = await res.json();
+        assert.match(body.message, /Content-Type image\/png not supported/);
+    });
+
+    it('POST: /optional-body accepts no body when bodyRequired=false', async () => {
+        const res = await fetch('http://localhost:2000/api/optional-body', {
+            method: 'POST'
+        });
+        assert.strictEqual(res.status, 200);
+        assert.deepStrictEqual(await res.json(), { ok: true });
+    });
+
+    it('POST: /optional-body still validates when a body is sent', async () => {
+        const res = await fetch('http://localhost:2000/api/optional-body', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        assert.strictEqual(res.status, 400);
+    });
+
+    it('GET: api/openapi marks optional body required=false', async () => {
+        const res = await fetch('http://localhost:2000/api/openapi');
+        const body = await res.json();
+        assert.strictEqual(body.paths['/optional-body'].post.requestBody.required, false);
+        assert.strictEqual(body.paths['/json-only'].post.requestBody.required, true);
+    });
+
+    it('GET: api/openapi includes example and examples on media type', async () => {
+        const res = await fetch('http://localhost:2000/api/openapi');
+        const body = await res.json();
+        const media = body.paths['/with-examples'].post.requestBody.content['application/json'];
+        assert.deepStrictEqual(media.example, { name: 'sample' });
+        assert.deepStrictEqual(media.examples.primary, {
+            summary: 'Primary',
+            value: { name: 'alice' }
+        });
+        assert.deepStrictEqual(media.examples.secondary, {
+            summary: 'Secondary',
+            value: { name: 'bob' }
+        });
     });
 });

@@ -1,5 +1,6 @@
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import type { RequestValidation } from './types.js';
+import { normalizeBody } from './types.js';
 import type { TSchema } from '@sinclair/typebox';
 
 export type OpenAPIDocumentInput = {
@@ -165,13 +166,20 @@ export default class Docs {
             }
 
             if (schemas.body) {
+                const normalized = normalizeBody(schemas.body) || {};
+                const content: Record<string, Doc.MediaTypeObject> = {};
+                for (const ct of Object.keys(normalized)) {
+                    const entry = normalized[ct];
+                    const media: Doc.MediaTypeObject = {
+                        schema: entry.schema === true ? {} : entry.schema as Doc.SchemaObject
+                    };
+                    if (entry.example !== undefined) media.example = entry.example;
+                    if (entry.examples !== undefined) media.examples = entry.examples as Record<string, Doc.ExampleObject>;
+                    content[ct] = media;
+                }
                 document.requestBody = {
-                    required: true,
-                    content: {
-                        'application/json': {
-                            schema: schemas.body
-                        }
-                    }
+                    required: schemas.bodyRequired !== false,
+                    content
                 };
             }
 

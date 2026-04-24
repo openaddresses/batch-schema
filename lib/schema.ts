@@ -13,6 +13,7 @@ import { Ajv } from 'ajv'
 import type { ErrorObject } from 'ajv'
 import addFormatsModule from 'ajv-formats'
 import type { RequestValidation } from './types.js';
+import { normalizeBody, matchContentType } from './types.js';
 import type { OpenAPIDocumentInput } from './openapi.js'
 import SchemaAPI from './api.js';
 import Docs from './openapi.js';
@@ -53,6 +54,67 @@ export default class Schemas {
         return new Err(400, null, `Validation Error ${String(method).toUpperCase()} ${path}`);
     }
 
+    /**
+     * Compile body validators keyed by content-type. Returns null when no
+     * body validation is configured. Each entry is either `true` (any body
+     * accepted for this content-type) or a compiled ajv validator function.
+     */
+    compileBodyValidators(
+        body: RequestValidation<TSchema, TSchema, TSchema, TSchema>['body']
+    ): Map<string, true | ReturnType<typeof ajv.compile>> | null {
+        const normalized = normalizeBody(body);
+        if (!normalized) return null;
+
+        const map = new Map<string, true | ReturnType<typeof ajv.compile>>();
+        for (const ct of Object.keys(normalized)) {
+            const schema = normalized[ct].schema;
+            if (schema === true || schema === undefined) {
+                map.set(ct, true);
+            } else {
+                map.set(ct, ajv.compile(schema));
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Validate the incoming request body against the compiled validator
+     * map for the route. Pushes a Body error onto `errors` if validation
+     * fails; returns an Err to respond with for an unsupported content-type.
+     *
+     * If `bodyRequired` is false and the request has no body / no
+     * content-type, validation is skipped.
+     */
+    validateBody(
+        req: Request,
+        validators: Map<string, true | ReturnType<typeof ajv.compile>>,
+        errors: Array<ErrorListItem>,
+        opts: { required?: boolean } = {}
+    ): Err | null {
+        const raw = (req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+        const required = opts.required !== false;
+
+        if (!raw && !required) return null;
+
+        const normalizedMap: Record<string, { schema: true }> = {};
+        for (const key of validators.keys()) normalizedMap[key] = { schema: true };
+        const matched = matchContentType(raw, normalizedMap);
+        const validator = matched ? validators.get(matched) : undefined;
+
+        if (!validator) {
+            const supported = Array.from(validators.keys()).join(', ');
+            return new Err(400, null, `Content-Type ${raw || '(none)'} not supported. Supported: ${supported}`);
+        }
+
+        if (validator !== true) {
+            if (!validator(req.body)) {
+                errors.push({ type: 'Body', errors: validator.errors as ErrorObject[] });
+            }
+        }
+
+        return null;
+    }
+
     constructor(
         router: Router,
         opts: {
@@ -74,8 +136,16 @@ export default class Schemas {
             this.router.use(morgan('combined', morganOptions));
         }
 
-        this.router.use(bodyparser.urlencoded({ extended: true }));
+        this.router.use(bodyparser.urlencoded({ extended: true, limit: `${opts.limit || 50}mb` }));
         this.router.use(bodyparser.json({ limit: `${opts.limit || 50}mb` }));
+        this.router.use(bodyparser.text({
+            limit: `${opts.limit || 50}mb`,
+            type: ['text/*', 'application/xml', 'application/*+xml']
+        }));
+        this.router.use(bodyparser.raw({
+            limit: `${opts.limit || 50}mb`,
+            type: ['application/octet-stream']
+        }));
 
         if (opts.error) {
             this.error = opts.error;
@@ -264,7 +334,7 @@ export default class Schemas {
             const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
             const paramsValidation = validation.params && ajv.compile(validation.params);
             const queryValidation = validation.query && ajv.compile(validation.query);
-            const bodyValidation = validation.body && ajv.compile(validation.body);
+            const bodyValidators = this.compileBodyValidators(validation.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -277,7 +347,10 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
+                if (bodyValidators) {
+                    const ctErr = this.validateBody(req, bodyValidators, errors, { required: validation.bodyRequired });
+                    if (ctErr) return Err.respond(ctErr, res);
+                }
                 if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.POST, path), res, errors);
 
                 const json = res.json;
@@ -315,7 +388,7 @@ export default class Schemas {
             const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
             const paramsValidation = validation.params && ajv.compile(validation.params);
             const queryValidation = validation.query && ajv.compile(validation.query);
-            const bodyValidation = validation.body && ajv.compile(validation.body);
+            const bodyValidators = this.compileBodyValidators(validation.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -328,7 +401,10 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
+                if (bodyValidators) {
+                    const ctErr = this.validateBody(req, bodyValidators, errors, { required: validation.bodyRequired });
+                    if (ctErr) return Err.respond(ctErr, res);
+                }
                 if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.PATCH, path), res, errors);
 
                 const json = res.json;
@@ -366,7 +442,7 @@ export default class Schemas {
             const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
             const paramsValidation = validation.params && ajv.compile(validation.params);
             const queryValidation = validation.query && ajv.compile(validation.query);
-            const bodyValidation = validation.body && ajv.compile(validation.body);
+            const bodyValidators = this.compileBodyValidators(validation.body);
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -379,7 +455,10 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (bodyValidation && !bodyValidation(req.body)) errors.push({ type: 'Body', errors: bodyValidation.errors as ErrorObject[] });
+                if (bodyValidators) {
+                    const ctErr = this.validateBody(req, bodyValidators, errors, { required: validation.bodyRequired });
+                    if (ctErr) return Err.respond(ctErr, res);
+                }
                 if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.PUT, path), res, errors);
 
                 const json = res.json;
