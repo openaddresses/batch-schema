@@ -4,15 +4,15 @@ import path from 'node:path';
 import morgan from 'morgan';
 import bodyparser from 'body-parser';
 import Err from '@openaddresses/batch-error';
-import { Type } from '@sinclair/typebox';
+import { Kind } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import { Router } from 'express'
 import type { RequestHandler } from 'express'
 import { Ajv } from 'ajv'
-import type { ErrorObject } from 'ajv'
+import type { ErrorObject, ValidateFunction } from 'ajv'
 import addFormatsModule from 'ajv-formats'
-import type { RequestValidation } from './types.js';
+import type { RequestValidation, NormalizedBody } from './types.js';
 import { normalizeBody, matchContentType } from './types.js';
 import type { OpenAPIDocumentInput } from './openapi.js'
 import SchemaAPI from './api.js';
@@ -29,6 +29,82 @@ const ajv = new Ajv({
 addFormatsModule.default(ajv);
 
 export type ErrorListItem = { type: 'Body' | 'Query' | 'Params'; errors: ErrorObject[] };
+
+/**
+ * Per-route body validation state, compiled once at route registration:
+ * ajv validators keyed by content-type, the normalized map used for
+ * content-type matching, and the precomputed supported-types string
+ * used in error messages.
+ */
+export type CompiledBodyValidation = {
+    validators: Map<string, true | ValidateFunction>;
+    matcher: NormalizedBody;
+    supported: string;
+};
+
+type RouteMethod =
+    | Doc.HttpMethods.GET
+    | Doc.HttpMethods.DELETE
+    | Doc.HttpMethods.POST
+    | Doc.HttpMethods.PATCH
+    | Doc.HttpMethods.PUT;
+
+const MAX_LOGGED_RESPONSE = 4096;
+
+/**
+ * Deep-clone a value following JSON.stringify semantics: toJSON() support
+ * (Date => ISO string), undefined/function/symbol omission, NaN/Infinity
+ * => null, and circular reference detection. Response validation needs the
+ * serialized shape of the payload (Dates must already be strings), and ajv's
+ * removeAdditional/useDefaults mutate the object they validate, so the
+ * caller's object must be protected. A single-pass clone does both without
+ * the cost of JSON.parse(JSON.stringify()) building an intermediate string.
+ */
+function jsonClone(value: unknown, seen?: Set<object>): unknown {
+    if (value !== null && typeof value === 'object' && typeof (value as { toJSON?: unknown }).toJSON === 'function') {
+        value = (value as { toJSON: () => unknown }).toJSON();
+    }
+
+    if (value === null) return null;
+
+    switch (typeof value) {
+        case 'string':
+        case 'boolean':
+            return value;
+        case 'number':
+            return Number.isFinite(value) ? value : null;
+        case 'bigint':
+            throw new TypeError('Do not know how to serialize a BigInt');
+        case 'object':
+            break;
+        default:
+            return undefined; // undefined | function | symbol are omitted, as in JSON.stringify
+    }
+
+    if (!seen) seen = new Set();
+    if (seen.has(value as object)) throw new TypeError('Converting circular structure to JSON');
+    seen.add(value as object);
+
+    let out: unknown;
+    if (Array.isArray(value)) {
+        const arr = new Array(value.length);
+        for (let i = 0; i < value.length; i++) {
+            const v = jsonClone(value[i], seen);
+            arr[i] = v === undefined ? null : v;
+        }
+        out = arr;
+    } else {
+        const obj: Record<string, unknown> = {};
+        for (const key of Object.keys(value)) {
+            const v = jsonClone((value as Record<string, unknown>)[key], seen);
+            if (v !== undefined) obj[key] = v;
+        }
+        out = obj;
+    }
+
+    seen.delete(value as object);
+    return out;
+}
 
 /**
  * @class
@@ -56,38 +132,45 @@ export default class Schemas {
 
     /**
      * Compile body validators keyed by content-type. Returns null when no
-     * body validation is configured. Each entry is either `true` (any body
-     * accepted for this content-type) or a compiled ajv validator function.
+     * body validation is configured. Each validator entry is either `true`
+     * (any body accepted for this content-type) or a compiled ajv validator.
+     * The content-type matcher and supported-types error string are
+     * precomputed here so no per-request allocation is needed.
      */
     compileBodyValidators(
         body: RequestValidation<TSchema, TSchema, TSchema, TSchema>['body']
-    ): Map<string, true | ReturnType<typeof ajv.compile>> | null {
+    ): CompiledBodyValidation | null {
         const normalized = normalizeBody(body);
         if (!normalized) return null;
 
-        const map = new Map<string, true | ReturnType<typeof ajv.compile>>();
+        const validators = new Map<string, true | ValidateFunction>();
         for (const ct of Object.keys(normalized)) {
             const schema = normalized[ct].schema;
             if (schema === true || schema === undefined) {
-                map.set(ct, true);
+                validators.set(ct, true);
             } else {
-                map.set(ct, ajv.compile(schema));
+                validators.set(ct, ajv.compile(schema));
             }
         }
-        return map;
+
+        return {
+            validators,
+            matcher: normalized,
+            supported: Object.keys(normalized).join(', ')
+        };
     }
 
     /**
-     * Validate the incoming request body against the compiled validator
-     * map for the route. Pushes a Body error onto `errors` if validation
+     * Validate the incoming request body against the compiled validation
+     * state for the route. Pushes a Body error onto `errors` if validation
      * fails; returns an Err to respond with for an unsupported content-type.
      *
-     * If `bodyRequired` is false and the request has no body / no
+     * If `opts.required` is false and the request has no body / no
      * content-type, validation is skipped.
      */
     validateBody(
         req: Request,
-        validators: Map<string, true | ReturnType<typeof ajv.compile>>,
+        compiled: CompiledBodyValidation,
         errors: Array<ErrorListItem>,
         opts: { required?: boolean } = {}
     ): Err | null {
@@ -96,14 +179,11 @@ export default class Schemas {
 
         if (!raw && !required) return null;
 
-        const normalizedMap: Record<string, { schema: true }> = {};
-        for (const key of validators.keys()) normalizedMap[key] = { schema: true };
-        const matched = matchContentType(raw, normalizedMap);
-        const validator = matched ? validators.get(matched) : undefined;
+        const matched = matchContentType(raw, compiled.matcher);
+        const validator = matched ? compiled.validators.get(matched) : undefined;
 
         if (!validator) {
-            const supported = Array.from(validators.keys()).join(', ');
-            return new Err(400, null, `Content-Type ${raw || '(none)'} not supported. Supported: ${supported}`);
+            return new Err(400, null, `Content-Type ${raw || '(none)'} not supported. Supported: ${compiled.supported}`);
         }
 
         if (validator !== true) {
@@ -220,21 +300,48 @@ export default class Schemas {
         await bp_fn(this, config);
     }
 
-    async get<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+    /**
+     * Compile the response validator for a route. Type.Any and Type.Unknown
+     * impose no constraints, so they are skipped entirely — routes with an
+     * open response schema (or none) bypass response validation and its
+     * clone at request time.
+     */
+    private compileResponseValidation(res?: TSchema): ValidateFunction | null {
+        if (!res) return null;
+        if (res[Kind] === 'Any' || res[Kind] === 'Unknown') return null;
+        return ajv.compile(res);
+    }
+
+    /**
+     * Shared route registration: compiles all validators once, then installs
+     * a request handler that validates params/query/body and — only when a
+     * response schema requires it — wraps res.json with response validation.
+     */
+    private route<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+        method: RouteMethod,
         path: string,
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
-    ) {
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse>,
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>,
+        allowBody: boolean
+    ): void {
+        const methodUpper = String(method).toUpperCase();
+
         try {
             const validation = this.normalizeValidation(opts);
 
-            this.docs.push({ method: Doc.HttpMethods.GET, path: path }, validation);
-            this.schemas.set(`GET ${path}`, validation);
+            this.docs.push({ method, path }, validation);
+            this.schemas.set(`${methodUpper} ${path}`, validation);
 
-            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
+            const resValidation = this.compileResponseValidation(validation.res);
             const paramsValidation = validation.params && ajv.compile(validation.params);
             const queryValidation = validation.query && ajv.compile(validation.query);
-            if (validation.body) throw new Error(`Body not allowed`);
+
+            let bodyValidation: CompiledBodyValidation | null = null;
+            if (allowBody) {
+                bodyValidation = this.compileBodyValidators(validation.body);
+            } else if (validation.body) {
+                throw new Error(`Body not allowed`);
+            }
 
             const _handler: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
@@ -247,27 +354,44 @@ export default class Schemas {
                 const errors: Array<ErrorListItem> = [];
                 if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
                 if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.GET, path), res, errors);
+                if (bodyValidation) {
+                    const ctErr = this.validateBody(req, bodyValidation, errors, { required: validation.bodyRequired });
+                    if (ctErr) return Err.respond(ctErr, res);
+                }
+                if (errors.length) return Err.respond(this.validationError(method, path), res, errors);
 
-                const json = res.json;
-                res.json = function(obj) {
-                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
-                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
-                        res.status(400);
-                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
-                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
-                    } else {
+                if (resValidation) {
+                    const json = res.json;
+                    res.json = function(obj) {
+                        if (res.statusCode === null || res.statusCode === 200) {
+                            obj = jsonClone(obj); // Date => String needs to happen before validation
+                            if (!resValidation(obj)) {
+                                res.status(400);
+                                const logged = JSON.stringify(obj);
+                                console.error(`Response Validation Error: ${methodUpper} ${path}: ${logged && logged.length > MAX_LOGGED_RESPONSE ? logged.slice(0, MAX_LOGGED_RESPONSE) + '... (truncated)' : logged}`);
+                                return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
+                            }
+                        }
                         return json.call(this, obj);
-                    }
-                };
+                    };
+                }
 
                 return handler(req, res, next);
             };
 
-            this.router.get(path, _handler);
+            this.router[method as 'get' | 'delete' | 'post' | 'patch' | 'put'](path, _handler);
         } catch (err) {
-            throw new Error(`Get: ${path}: ` + err, { cause: err })
+            const label = methodUpper.charAt(0) + methodUpper.slice(1).toLowerCase();
+            throw new Error(`${label}: ${path}: ` + String(err), { cause: err })
         }
+    }
+
+    async get<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+        path: string,
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
+    ) {
+        this.route(Doc.HttpMethods.GET, path, opts, handler, false);
     }
 
     async delete<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -275,49 +399,7 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
-        try {
-            const validation = this.normalizeValidation(opts);
-
-            this.docs.push({ method: Doc.HttpMethods.DELETE, path: path }, validation);
-            this.schemas.set(`DELETE ${path}`, validation);
-
-            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
-            const paramsValidation = validation.params && ajv.compile(validation.params);
-            const queryValidation = validation.query && ajv.compile(validation.query);
-            if (validation.body) throw new Error(`Body not allowed`);
-
-            const _handler: RequestHandler = (req, res, next) => {
-                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
-                    Object.defineProperty(req, 'query', {
-                        writable: true,
-                        value: { ...req.query },
-                    })
-                }
-
-                const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
-                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.DELETE, path), res, errors);
-
-                const json = res.json;
-                res.json = function(obj) {
-                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
-                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
-                        res.status(400);
-                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
-                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
-                    } else {
-                        return json.call(this, obj);
-                    }
-                };
-
-                return handler(req, res, next);
-            };
-
-            this.router.delete(path, _handler);
-        } catch (err) {
-            throw new Error(`Delete: ${path}: ` + String(err), { cause: err })
-        }
+        this.route(Doc.HttpMethods.DELETE, path, opts, handler, false);
     }
 
     async post<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -325,53 +407,7 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
-        try {
-            const validation = this.normalizeValidation(opts);
-
-            this.docs.push({ method: Doc.HttpMethods.POST, path: path }, validation);
-            this.schemas.set(`POST ${path}`, validation);
-
-            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
-            const paramsValidation = validation.params && ajv.compile(validation.params);
-            const queryValidation = validation.query && ajv.compile(validation.query);
-            const bodyValidators = this.compileBodyValidators(validation.body);
-
-            const _handler: RequestHandler = (req, res, next) => {
-                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
-                    Object.defineProperty(req, 'query', {
-                        writable: true,
-                        value: { ...req.query },
-                    })
-                }
-
-                const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
-                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (bodyValidators) {
-                    const ctErr = this.validateBody(req, bodyValidators, errors, { required: validation.bodyRequired });
-                    if (ctErr) return Err.respond(ctErr, res);
-                }
-                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.POST, path), res, errors);
-
-                const json = res.json;
-                res.json = function(obj) {
-                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
-                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
-                        res.status(400);
-                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
-                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
-                    } else {
-                        return json.call(this, obj);
-                    }
-                };
-
-                return handler(req, res, next);
-            };
-
-            this.router.post(path, _handler);
-        } catch (err) {
-            throw new Error(`Post: ${path}: ` + String(err), { cause: err })
-        }
+        this.route(Doc.HttpMethods.POST, path, opts, handler, true);
     }
 
     async patch<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -379,53 +415,7 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
-        try {
-            const validation = this.normalizeValidation(opts);
-
-            this.docs.push({ method: Doc.HttpMethods.PATCH, path: path }, validation);
-            this.schemas.set(`PATCH ${path}`, validation);
-
-            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
-            const paramsValidation = validation.params && ajv.compile(validation.params);
-            const queryValidation = validation.query && ajv.compile(validation.query);
-            const bodyValidators = this.compileBodyValidators(validation.body);
-
-            const _handler: RequestHandler = (req, res, next) => {
-                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
-                    Object.defineProperty(req, 'query', {
-                        writable: true,
-                        value: { ...req.query },
-                    })
-                }
-
-                const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
-                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (bodyValidators) {
-                    const ctErr = this.validateBody(req, bodyValidators, errors, { required: validation.bodyRequired });
-                    if (ctErr) return Err.respond(ctErr, res);
-                }
-                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.PATCH, path), res, errors);
-
-                const json = res.json;
-                res.json = function(obj) {
-                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
-                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
-                        res.status(400);
-                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
-                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
-                    } else {
-                        return json.call(this, obj);
-                    }
-                };
-
-                return handler(req, res, next);
-            };
-
-            this.router.patch(path, _handler);
-        } catch (err) {
-            throw new Error(`Patch: ${path}: ` + String(err), { cause: err })
-        }
+        this.route(Doc.HttpMethods.PATCH, path, opts, handler, true);
     }
 
     async put<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
@@ -433,53 +423,7 @@ export default class Schemas {
         opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
         handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
     ) {
-        try {
-            const validation = this.normalizeValidation(opts);
-
-            this.docs.push({ method: Doc.HttpMethods.PUT, path: path }, validation);
-            this.schemas.set(`PUT ${path}`, validation);
-
-            const resValidation = validation.res && !(validation.res instanceof Type.Any) && !(validation.res instanceof Type.Unknown) && ajv.compile(validation.res);
-            const paramsValidation = validation.params && ajv.compile(validation.params);
-            const queryValidation = validation.query && ajv.compile(validation.query);
-            const bodyValidators = this.compileBodyValidators(validation.body);
-
-            const _handler: RequestHandler = (req, res, next) => {
-                if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
-                    Object.defineProperty(req, 'query', {
-                        writable: true,
-                        value: { ...req.query },
-                    })
-                }
-
-                const errors: Array<ErrorListItem> = [];
-                if (paramsValidation && !paramsValidation(req.params)) errors.push({ type: 'Params', errors: paramsValidation.errors as ErrorObject[] });
-                if (queryValidation && !queryValidation(req.query)) errors.push({ type: 'Query', errors: queryValidation.errors as ErrorObject[] });
-                if (bodyValidators) {
-                    const ctErr = this.validateBody(req, bodyValidators, errors, { required: validation.bodyRequired });
-                    if (ctErr) return Err.respond(ctErr, res);
-                }
-                if (errors.length) return Err.respond(this.validationError(Doc.HttpMethods.PUT, path), res, errors);
-
-                const json = res.json;
-                res.json = function(obj) {
-                    obj = JSON.parse(JSON.stringify(obj)) // Here as Date => String needs to happen
-                    if ((res.statusCode === null || res.statusCode === 200) && resValidation && !resValidation(obj)) {
-                        res.status(400);
-                        console.error(`Response Validation Error: ${JSON.stringify(obj)}`);
-                        return json.call(this, { type: 'Response', errors: resValidation.errors as ErrorObject[] });
-                    } else {
-                        return json.call(this, obj);
-                    }
-                };
-
-                return handler(req, res, next);
-            };
-
-            this.router.put(path, _handler);
-        } catch (err) {
-            throw new Error(`Put: ${path}: ` + String(err), { cause: err })
-        }
+        this.route(Doc.HttpMethods.PUT, path, opts, handler, true);
     }
 
     not_found() {

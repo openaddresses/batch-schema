@@ -10,6 +10,17 @@
 
 ## Version History
 
+### v10.27.0
+
+- :rocket: Only wrap `res.json` when a route has a response schema that requires validation — routes without one no longer pay any response-path overhead
+- :rocket: Replace the `JSON.parse(JSON.stringify())` response clone with a single-pass JSON-semantics clone (~1.3-1.6x faster, no intermediate string allocation)
+- :rocket: Skip the response clone entirely for non-200 responses (validation was already skipped)
+- :bug: `Type.Any`/`Type.Unknown` response schemas were still compiled and validated on every request due to a broken `instanceof` check; now detected via the TypeBox `Kind` symbol and skipped
+- :rocket: Precompute the body content-type matcher and supported-types error string at route registration instead of rebuilding them per request
+- :rocket: Consolidate the five per-method route registration paths into a single shared implementation
+- :rocket: Truncate response-validation error logging to 4KB
+- :white_check_mark: Add response validation test suite
+
 ### v10.26.0
 
 - :rocket: Allow non-json content-type
