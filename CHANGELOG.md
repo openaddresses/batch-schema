@@ -10,7 +10,7 @@
 
 ## Version History
 
-### v10.27.0
+### v10.27.0 - 2026-07-06
 
 - :rocket: Only wrap `res.json` when a route has a response schema that requires validation — routes without one no longer pay any response-path overhead
 - :rocket: Replace the `JSON.parse(JSON.stringify())` response clone with a single-pass JSON-semantics clone (~1.3-1.6x faster, no intermediate string allocation)
