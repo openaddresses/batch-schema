@@ -91,6 +91,12 @@ export type RequestValidation<
 > = {
   private?: boolean;
   deprecated?: boolean;
+  /**
+   * OpenAPI Security Requirement Objects for this operation. Overrides the
+   * document level `security` array - entries are alternatives (OR) and the
+   * keys must reference `components.securitySchemes`
+   */
+  security?: Array<Record<string, Array<string>>>;
   name?: string;
   group?: string;
   description?: string;

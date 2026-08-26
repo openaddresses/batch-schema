@@ -52,6 +52,20 @@ async function server() {
 
 Set `deprecated: true` on a route schema to mark the generated OpenAPI operation as deprecated.
 
+Set `security` on a route schema to emit an operation level OpenAPI Security Requirement
+array, overriding any document level `security` passed via `new Schema(router, { openapi })`.
+Keys must reference `components.securitySchemes` and each entry is an alternative:
+
+```js
+await schema.get('/search', {
+    security: [
+        { bearerAuth: [] },
+        { layerAuth: ['search:read'] },
+    ],
+    res: Type.Any(),
+}, (req, res) => res.json({}));
+```
+
 ## Request Body Validation
 
 The `body` option accepts two forms.

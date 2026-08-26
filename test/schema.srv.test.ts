@@ -24,6 +24,17 @@ describe('Schema Server', () => {
                 res.json({ ok: true });
             });
 
+            await schema.get('/secured', {
+                description: 'Route with operation level security',
+                security: [
+                    { bearerAuth: [] },
+                    { layerAuth: ['search:read'] }
+                ],
+                res: Type.Object({ ok: Type.Boolean() })
+            }, async (_, res) => {
+                res.json({ ok: true });
+            });
+
             await schema.post('/json-only', {
                 description: 'Backwards compatible JSON body',
                 body: Type.Object({
@@ -109,6 +120,11 @@ describe('Schema Server', () => {
 
         assert.deepStrictEqual(body, {
             'GET /legacy': {
+                body: false,
+                query: false,
+                res: true
+            },
+            'GET /secured': {
                 body: false,
                 query: false,
                 res: true
@@ -217,6 +233,18 @@ describe('Schema Server', () => {
         assert.strictEqual(res.status, 200, 'http: 200');
         assert.strictEqual(body.paths['/legacy'].get.deprecated, true);
         assert.strictEqual(body.paths['/schema'].get.deprecated, false);
+    });
+
+    it('GET: api/openapi emits operation level security', async () => {
+        const res = await fetch('http://localhost:2000/api/openapi');
+        const body = await res.json();
+
+        assert.strictEqual(res.status, 200, 'http: 200');
+        assert.deepStrictEqual(body.paths['/secured'].get.security, [
+            { bearerAuth: [] },
+            { layerAuth: ['search:read'] }
+        ]);
+        assert.strictEqual(body.paths['/legacy'].get.security, undefined);
     });
 
     it('POST: /json-only with valid JSON body (backwards compat)', async () => {
