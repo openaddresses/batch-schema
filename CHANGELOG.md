@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.28.1 - 2026-08-26
+
+- :rocket: Dep Updates
+
 ### v10.28.0 - 2026-08-26
 
 - :tada: Add optional `security` route option which is emitted as the operation level OpenAPI Security Requirement array
