@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.28.0 - 2026-08-26
+
+- :tada: Add optional `security` route option which is emitted as the operation level OpenAPI Security Requirement array
+
 ### v10.27.0 - 2026-07-06
 
 - :rocket: Only wrap `res.json` when a route has a response schema that requires validation — routes without one no longer pay any response-path overhead

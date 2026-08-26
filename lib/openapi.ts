@@ -109,6 +109,8 @@ export default class Docs {
                 responses: {}
             };
 
+            if (schemas.security) document.security = schemas.security;
+
             if (schemas.params && schemas.params.type === 'object') {
                 for (const name in (schemas.params.properties || {})) {
                     const param = schemas.params.properties[name];
