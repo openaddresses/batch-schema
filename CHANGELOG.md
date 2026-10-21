@@ -10,6 +10,10 @@
 
 ## Version History
 
+### v10.29.0 - 2026-10-21
+
+- :rocket: Dep Updates
+
 ### v10.28.1 - 2026-08-26
 
 - :rocket: Dep Updates
