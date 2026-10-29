@@ -105,6 +105,28 @@ describe('Schema Server', () => {
                 res.json({ ok: true });
             });
 
+            await schema.post('/discriminated', {
+                description: 'Discriminated oneOf body',
+                body: Type.Unsafe({
+                    discriminator: { propertyName: 'kind' },
+                    oneOf: [
+                        Type.Object({
+                            kind: Type.Literal('point'),
+                            x: Type.Number()
+                        }),
+                        Type.Object({
+                            kind: Type.Literal('line'),
+                            points: Type.Array(Type.Number())
+                        })
+                    ]
+                }),
+                res: Type.Object({
+                    body: Type.Any()
+                })
+            }, async (req, res) => {
+                res.json({ body: req.body });
+            });
+
             await schema.api();
             done();
         });
@@ -150,6 +172,11 @@ describe('Schema Server', () => {
                 res: true
             },
             'POST /with-examples': {
+                body: true,
+                query: false,
+                res: true
+            },
+            'POST /discriminated': {
                 body: true,
                 query: false,
                 res: true
@@ -255,6 +282,28 @@ describe('Schema Server', () => {
         });
         assert.strictEqual(res.status, 200);
         assert.deepStrictEqual(await res.json(), { ok: true });
+    });
+
+    it('POST: /discriminated keeps the body of a non-first oneOf branch', async () => {
+        const res = await fetch('http://localhost:2000/api/discriminated', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 'line', points: [1, 2, 3], extra: true })
+        });
+        assert.strictEqual(res.status, 200);
+        assert.deepStrictEqual(await res.json(), { body: { kind: 'line', points: [1, 2, 3] } });
+    });
+
+    it('POST: /discriminated rejects an unknown discriminator value', async () => {
+        const res = await fetch('http://localhost:2000/api/discriminated', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 'polygon', points: [1, 2, 3] })
+        });
+        assert.strictEqual(res.status, 400);
+        const body = await res.json();
+        assert.strictEqual(body.message, 'Validation Error POST /discriminated');
+        assert.strictEqual(body.messages[0].errors[0].keyword, 'discriminator');
     });
 
     it('POST: /multi-body with application/json', async () => {

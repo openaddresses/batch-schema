@@ -23,7 +23,8 @@ const ajv = new Ajv({
     allErrors: true,
     useDefaults: true,
     removeAdditional: 'all',
-    coerceTypes: true
+    coerceTypes: true,
+    discriminator: true
 });
 
 addFormatsModule.default(ajv);

@@ -10,6 +10,12 @@
 
 ## Version History
 
+### Pending Release
+
+### v10.30.0 - 2026-10-28
+
+- :tada: Enable the ajv `discriminator` keyword so a `oneOf` body with `discriminator: { propertyName }` validates only the matching branch. Without it `removeAdditional: 'all'` strips a body while evaluating the first `anyOf`/`oneOf` branch, so any later branch fails with spurious `required` errors
+
 ### v10.29.0 - 2026-10-21
 
 - :rocket: Dep Updates
