@@ -17,7 +17,7 @@ import { Type } from '@sinclair/typebox';
 
 const app = express();
 const schema = new Schema(express.Router(), {
-    logging: true,  // Enable Morgan Logging
+    logging: true,  // Enable Morgan Logging - or pass morgan options, including a custom `format`
     limit: 50       // Body size for parsing JSON
 });
 
@@ -65,6 +65,99 @@ await schema.get('/search', {
     res: Type.Any(),
 }, (req, res) => res.json({}));
 ```
+
+### Enforcing `security`
+
+By default `security` is documentation only. Pass `securityHandlers` - one per scheme in
+`components.securitySchemes` - to enforce it. Before a request is validated, the route's
+Security Requirements (its own `security`, or else the document level one) are evaluated
+in order: a requirement is satisfied when every scheme it names is satisfied, and the first
+satisfied requirement wins.
+
+A handler receives the request and the scopes the requirement lists for its scheme. It
+returns the authenticated principal to satisfy the scheme, or returns `null` / `false` /
+throws a 401 or 403 [batch-error](https://github.com/openaddresses/batch-error) when it is not
+satisfied. Any other thrown error fails the request. Handlers run before the request body
+is parsed and before `req.params` & `req.query` are validated or coerced, so `req.body` is
+not available to them.
+
+```js
+const schema = new Schema(express.Router(), {
+    openapi: {
+        components: {
+            securitySchemes: {
+                userAuth: { type: 'http', scheme: 'bearer' },
+                machineAuth: { type: 'apiKey', in: 'header', name: 'x-machine' },
+            }
+        },
+        security: [{ userAuth: [] }]
+    },
+    securityHandlers: {
+        userAuth: async (req, scopes) => {
+            const user = await authenticate(req.headers.authorization);
+            if (!user) return null;
+
+            if (!scopes.every(scope => user.scopes.includes(scope))) {
+                throw new Err(403, null, 'Insufficient Scope');
+            }
+
+            return user;
+        },
+        machineAuth: async (req) => {
+            return await machine(req.headers['x-machine']);
+        },
+    }
+});
+
+// Inherits the document level security
+await schema.get('/profile', {}, (req, res) => {
+    res.json(res.locals.auth.userAuth);
+});
+
+// Either a user holding the scope or a machine
+await schema.get('/item', {
+    security: [{ userAuth: ['item:read'] }, { machineAuth: [] }]
+}, (req, res) => {
+    if (res.locals.auth.userAuth) {
+        res.json({ user: res.locals.auth.userAuth.name });
+    } else {
+        res.json({ machine: res.locals.auth.machineAuth.id });
+    }
+});
+
+// Public
+await schema.get('/status', { security: [] }, (req, res) => res.json({}));
+```
+
+The principals of the satisfied requirement are set on `res.locals.auth`, keyed by scheme
+and typed from the handlers' return types. A route whose `security` is written inline gets
+a union of its alternatives, so checking one scheme narrows the others. A route that
+inherits the document level security, or is passed an array typed as
+`Array<SecurityRequirement>`, gets every scheme as optional.
+
+When nothing is satisfied the response is the first 403 raised, or else the first 401 - a
+401 carries a `WWW-Authenticate` header naming the route's `http` schemes.
+
+With `securityHandlers` set, routes are checked as they are registered and the following
+throw:
+
+- a `security` naming a scheme missing from `components.securitySchemes`
+- a `security` naming a scheme that has no handler
+- an empty Security Requirement (`[{}]`) - use `[]` for a public route
+- a route with no `security` when there is no document level `security`
+
+## Errors
+
+Anything a route handler throws - or rejects with - and any body parser failure is returned
+in the [batch-error](https://github.com/openaddresses/batch-error) JSON shape:
+
+```json
+{ "status": 400, "message": "Unexpected end of JSON input", "messages": [] }
+```
+
+A thrown batch-error keeps its status and message, as does a 4xx error a body parser marks
+as safe to expose (malformed JSON, a body over `limit`). Everything else is logged and
+returned as a 500 `Internal Server Error` without its message or stack.
 
 ## Request Body Validation
 

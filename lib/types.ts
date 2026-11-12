@@ -1,5 +1,6 @@
 import { Kind } from '@sinclair/typebox';
 import type { TSchema } from '@sinclair/typebox';
+import type { Request } from 'express';
 
 /**
  * Per-content-type body entry. May be:
@@ -83,20 +84,85 @@ export function matchContentType(
     return undefined;
 }
 
+/**
+ * An OpenAPI Security Requirement Object - every scheme named must be
+ * satisfied, each with all of its listed scopes
+ */
+export type SecurityRequirement = { [scheme: string]: Array<string> | undefined };
+
+export type SecurityRoute = {
+    method: string;
+    path: string;
+};
+
+/**
+ * Decides whether a request satisfies one security scheme with the given
+ * scopes. Return the authenticated principal to satisfy the scheme - return
+ * null/undefined/false, or throw a 401/403 error, when it is not satisfied.
+ * Any other thrown error fails the request
+ */
+export type SecurityHandler<TPrincipal = unknown> = (
+    req: Request,
+    scopes: Array<string>,
+    route: SecurityRoute
+) => TPrincipal | null | undefined | false | Promise<TPrincipal | null | undefined | false>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SecurityHandlers = Record<string, SecurityHandler<any>>;
+
+export type SecurityPrincipal<THandler> = THandler extends (...args: never[]) => infer R ? Exclude<NonNullable<Awaited<R>>, false> : never;
+
+type AnyAuth<THandlers> = { [K in keyof THandlers]?: SecurityPrincipal<THandlers[K]> };
+type NoAuth<THandlers> = { [K in keyof THandlers]?: undefined };
+type PresentKeys<TAlt> = { [K in keyof TAlt]-?: undefined extends TAlt[K] ? never : K }[keyof TAlt];
+type AltAuth<THandlers, TAlt> =
+    & { [K in PresentKeys<TAlt> & keyof THandlers]: SecurityPrincipal<THandlers[K]> }
+    & { [K in Exclude<keyof THandlers, PresentKeys<TAlt>>]?: undefined };
+
+/**
+ * The type of `res.locals.auth` for a route: the principals of the
+ * alternative that was satisfied, keyed by scheme. A route whose `security`
+ * is written inline gets a union of its alternatives - a route that inherits
+ * the document level security, or passes a widened array, gets every scheme
+ * as optional
+ */
+export type SecurityAuth<THandlers, TSecurity> =
+    TSecurity extends ReadonlyArray<infer TAlt>
+        ? [TAlt] extends [never]
+            ? NoAuth<THandlers>
+            : string extends keyof TAlt
+                ? AnyAuth<THandlers>
+                : TAlt extends unknown ? AltAuth<THandlers, TAlt> : never
+        : AnyAuth<THandlers>;
+
+/**
+ * `res.locals` for a route - left as the Express default when no handlers are
+ * configured so handlers annotated with plain Express types keep compiling
+ */
+export type SecurityLocals<THandlers, TSecurity> = [keyof THandlers] extends [never]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? Record<string, any>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : Record<string, any> & { auth: SecurityAuth<THandlers, TSecurity> };
+
+export type RouteSecurity = ReadonlyArray<SecurityRequirement> | undefined;
+
 export type RequestValidation<
     TParams extends TSchema,
     TQuery extends TSchema,
     TBody extends TSchema,
-    TResponse extends TSchema
+    TResponse extends TSchema,
+    TSecurity extends RouteSecurity = RouteSecurity
 > = {
   private?: boolean;
   deprecated?: boolean;
   /**
    * OpenAPI Security Requirement Objects for this operation. Overrides the
    * document level `security` array - entries are alternatives (OR) and the
-   * keys must reference `components.securitySchemes`
+   * keys must reference `components.securitySchemes`. Enforced when the
+   * Schema is given `securityHandlers`
    */
-  security?: Array<Record<string, Array<string>>>;
+  security?: TSecurity;
   name?: string;
   group?: string;
   description?: string;

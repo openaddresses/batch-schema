@@ -8,11 +8,11 @@ import { Kind } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { OpenAPIV3 as Doc } from 'openapi-types'
 import { Router } from 'express'
-import type { RequestHandler } from 'express'
+import type { RequestHandler, ErrorRequestHandler } from 'express'
 import { Ajv } from 'ajv'
 import type { ErrorObject, ValidateFunction } from 'ajv'
 import addFormatsModule from 'ajv-formats'
-import type { RequestValidation, NormalizedBody } from './types.js';
+import type { RequestValidation, NormalizedBody, RouteSecurity, SecurityRequirement, SecurityHandlers, SecurityLocals } from './types.js';
 import { normalizeBody, matchContentType } from './types.js';
 import type { OpenAPIDocumentInput } from './openapi.js'
 import SchemaAPI from './api.js';
@@ -108,11 +108,35 @@ function jsonClone(value: unknown, seen?: Set<object>): unknown {
 }
 
 /**
+ * Final error handler of every route: anything a body parser or handler
+ * throws is returned as a batch-error JSON body rather than Express's HTML
+ * error page. Only errors that are already public (a batch-error, or a 4xx
+ * http-error marked `expose`) keep their status and message
+ */
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+    if (err && typeof err === 'object' && !Object.hasOwn(err, 'safe')) {
+        const status = Number(err.status);
+
+        if (err.expose === true && status >= 400 && status < 500) {
+            return Err.respond(new Err(status, null, String(err.message), false), res);
+        }
+
+        console.error(err);
+
+        if (res.headersSent) return res.end();
+        return res.status(500).json({ status: 500, message: 'Internal Server Error', messages: [] });
+    }
+
+    return Err.respond(err, res);
+};
+
+/**
  * @class
  *
  * @param {Object} router Express Router Object
  * @param {Object}          opts Options Object
- * @param {object}          [opts.logging] disable logging with false
+ * @param {object}          [opts.logging] disable logging with false, or pass morgan options
+ * @param {string|Function} [opts.logging.format=combined] morgan format name, format string, or format function
  * @param {number}          [opts.limit=50] body size limit in mb
  * @param {object}          [opts.openapi] OpenAPI Base Document
  * @param {object}          [opts.prefix] API string Prefix
@@ -120,12 +144,15 @@ function jsonClone(value: unknown, seen?: Set<object>): unknown {
  *
  * @param {URL} [opts.apidoc] apidoc file location
  */
-export default class Schemas {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export default class Schemas<THandlers extends SecurityHandlers = {}> {
     router: Router;
     docs: Docs;
     prefix: string;
     error: Record<number, TSchema>;
     schemas: Map<string, RequestValidation<TSchema, TSchema, TSchema, TSchema>>
+    securityHandlers?: THandlers;
+    parsers: Array<RequestHandler>;
 
     validationError(method: Doc.HttpMethods, path: string) {
         return new Err(400, null, `Validation Error ${String(method).toUpperCase()} ${path}`);
@@ -200,10 +227,13 @@ export default class Schemas {
         router: Router,
         opts: {
             prefix?: string;
-            logging?: boolean | morgan.Options<Request, Response>;
+            logging?: boolean | (morgan.Options<Request, Response> & {
+                format?: string | morgan.FormatFn<Request, Response>;
+            });
             limit?: number;
             error?: Record<number, TSchema>;
             openapi?: OpenAPIDocumentInput;
+            securityHandlers?: THandlers;
         } = {}
     ) {
         if (!router) throw new Error('Router Param Required');
@@ -211,22 +241,28 @@ export default class Schemas {
         this.router = router;
 
         this.prefix = opts.prefix || '';
+        this.securityHandlers = opts.securityHandlers;
 
         if (opts.logging !== false) {
-            const morganOptions: morgan.Options<Request, Response> = opts.logging && typeof opts.logging === 'object' ? opts.logging : {};
-            this.router.use(morgan('combined', morganOptions));
+            const { format = 'combined', ...morganOptions } = opts.logging && typeof opts.logging === 'object' ? opts.logging : {};
+
+            // morgan's overloads don't accept the string | FormatFn union directly
+            this.router.use(morgan(format as string, morganOptions));
         }
 
-        this.router.use(bodyparser.urlencoded({ extended: true, limit: `${opts.limit || 50}mb` }));
-        this.router.use(bodyparser.json({ limit: `${opts.limit || 50}mb` }));
-        this.router.use(bodyparser.text({
-            limit: `${opts.limit || 50}mb`,
-            type: ['text/*', 'application/xml', 'application/*+xml']
-        }));
-        this.router.use(bodyparser.raw({
-            limit: `${opts.limit || 50}mb`,
-            type: ['application/octet-stream']
-        }));
+        // Applied per route, after its security handlers, so a request is never parsed before it is authorized
+        this.parsers = [
+            bodyparser.urlencoded({ extended: true, limit: `${opts.limit || 50}mb` }),
+            bodyparser.json({ limit: `${opts.limit || 50}mb` }),
+            bodyparser.text({
+                limit: `${opts.limit || 50}mb`,
+                type: ['text/*', 'application/xml', 'application/*+xml']
+            }),
+            bodyparser.raw({
+                limit: `${opts.limit || 50}mb`,
+                type: ['application/octet-stream']
+            })
+        ];
 
         if (opts.error) {
             this.error = opts.error;
@@ -240,11 +276,111 @@ export default class Schemas {
         });
 
         this.schemas = new Map();
+
+        if (this.securityHandlers && this.docs.base.security) {
+            this.checkSecurity(this.docs.base.security as RouteSecurity, 'Document level security');
+        }
     }
 
-    normalizeValidation<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {}
-    ): RequestValidation<TParams, TQuery, TBody, TResponse> {
+    /**
+     * With security enforced every scheme a route names must be documented
+     * and have a handler, so a misspelt scheme fails at startup
+     */
+    private checkSecurity(security: RouteSecurity, label: string): ReadonlyArray<SecurityRequirement> {
+        if (!security) {
+            throw new Error(`${label} must declare security when securityHandlers are set - use [] for a public route`);
+        }
+
+        const schemes = this.docs.base.components.securitySchemes || {};
+
+        for (const requirement of security) {
+            const names = Object.keys(requirement).filter(name => requirement[name] !== undefined);
+            if (!names.length) throw new Error(`${label} has an empty Security Requirement - use [] for a public route`);
+
+            for (const name of names) {
+                if (!Object.hasOwn(schemes, name)) {
+                    throw new Error(`${label} references unknown security scheme: ${name}`);
+                } else if (!this.securityHandlers || !Object.hasOwn(this.securityHandlers, name)) {
+                    throw new Error(`${label} references security scheme without a handler: ${name}`);
+                }
+            }
+        }
+
+        return security;
+    }
+
+    /**
+     * Find the first Security Requirement the request satisfies and return
+     * its principals keyed by scheme. A 403 is preferred over a 401 when
+     * nothing is satisfied, as the caller was at least identified
+     */
+    private async authorize(
+        req: Request,
+        res: Response,
+        security: ReadonlyArray<SecurityRequirement>,
+        route: { method: string; path: string }
+    ): Promise<Record<string, unknown>> {
+        if (!security.length) return {};
+
+        const handlers = this.securityHandlers as SecurityHandlers;
+        let failure: { status: number } | undefined;
+
+        for (const requirement of security) {
+            const auth: Record<string, unknown> = {};
+            let satisfied = true;
+
+            for (const name of Object.keys(requirement)) {
+                const scopes = requirement[name];
+                if (scopes === undefined) continue;
+
+                let error: { status: number } | undefined;
+
+                try {
+                    const principal = await handlers[name](req, [...scopes], route);
+
+                    if (principal === null || principal === undefined || principal === false) {
+                        error = new Err(401, null, 'Authentication Required');
+                    } else {
+                        auth[name] = principal;
+                    }
+                } catch (err) {
+                    const status = typeof err === 'object' && err !== null ? Number((err as { status?: unknown }).status) : NaN;
+                    if (status !== 401 && status !== 403) throw err;
+                    error = err as { status: number };
+                }
+
+                if (error) {
+                    if (!failure || (error.status === 403 && failure.status !== 403)) failure = error;
+                    satisfied = false;
+                    break;
+                }
+            }
+
+            if (satisfied) return auth;
+        }
+
+        if (failure && failure.status === 401) {
+            const schemes = (this.docs.base.components.securitySchemes || {}) as Record<string, { type?: string; scheme?: string }>;
+            const challenges = new Set<string>();
+
+            for (const requirement of security) {
+                for (const name of Object.keys(requirement)) {
+                    const scheme = schemes[name];
+                    if (scheme && scheme.type === 'http' && scheme.scheme) {
+                        challenges.add(scheme.scheme.charAt(0).toUpperCase() + scheme.scheme.slice(1).toLowerCase());
+                    }
+                }
+            }
+
+            if (challenges.size) res.setHeader('WWW-Authenticate', Array.from(challenges).join(', '));
+        }
+
+        throw failure;
+    }
+
+    normalizeValidation<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema, TSecurity extends RouteSecurity = RouteSecurity>(
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity> = {}
+    ): RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity> {
         return {
             deprecated: false,
             ...opts
@@ -272,7 +408,7 @@ export default class Schemas {
         if (dirpath instanceof URL) dirpath = dirpath.pathname;
         else dirpath = String(dirpath);
 
-        const routes: Array<Promise<(schema: Schemas, config: T) => void>> = [];
+        const routes: Array<Promise<(schema: Schemas<THandlers>, config: T) => void>> = [];
 
         // Load dynamic routes directory
         for (const r of fs.readdirSync(dirpath)) {
@@ -294,7 +430,7 @@ export default class Schemas {
      * @param {Object}  opts        Options Object
      * @param {boolean} opts.silent     Squelch StdOut
      */
-    async blueprint<T>(bp_fn: (schema: Schemas, config?: T) => Promise<void>, config?: T, opts: {
+    async blueprint<T>(bp_fn: (schema: Schemas<THandlers>, config?: T) => Promise<void>, config?: T, opts: {
         silent: boolean;
     } = { silent: false }) {
         if (!opts.silent) console.log(`ok - loaded blueprint`);
@@ -318,11 +454,11 @@ export default class Schemas {
      * a request handler that validates params/query/body and — only when a
      * response schema requires it — wraps res.json with response validation.
      */
-    private route<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+    private route<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema, TSecurity extends RouteSecurity>(
         method: RouteMethod,
         path: string,
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse>,
-        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>,
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity>,
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>, SecurityLocals<THandlers, TSecurity>>,
         allowBody: boolean
     ): void {
         const methodUpper = String(method).toUpperCase();
@@ -344,7 +480,12 @@ export default class Schemas {
                 throw new Error(`Body not allowed`);
             }
 
-            const _handler: RequestHandler = (req, res, next) => {
+            const security = this.securityHandlers
+                ? this.checkSecurity(validation.security || (this.docs.base.security as RouteSecurity), `${methodUpper} ${path}`)
+                : null;
+            const authorizeRoute = { method: methodUpper, path };
+
+            const validated: RequestHandler = (req, res, next) => {
                 if (req.query) { // Ref: https://github.com/cdimascio/express-openapi-validator/issues/969
                     Object.defineProperty(req, 'query', {
                         writable: true,
@@ -377,52 +518,68 @@ export default class Schemas {
                     };
                 }
 
-                return handler(req, res, next);
+                return (handler as unknown as RequestHandler)(req, res, next);
             };
 
-            this.router[method as 'get' | 'delete' | 'post' | 'patch' | 'put'](path, _handler);
+            const chain: Array<RequestHandler | ErrorRequestHandler> = [...this.parsers, validated, errorHandler];
+
+            if (security) {
+                const authorizer: RequestHandler = async (req, res, next) => {
+                    try {
+                        res.locals.auth = await this.authorize(req, res, security, authorizeRoute);
+                    } catch (err) {
+                        return Err.respond(err, res);
+                    }
+
+                    next();
+                };
+
+                chain.unshift(authorizer);
+            }
+
+            this.router[method as 'get' | 'delete' | 'post' | 'patch' | 'put'](path, ...chain);
         } catch (err) {
             const label = methodUpper.charAt(0) + methodUpper.slice(1).toLowerCase();
             throw new Error(`${label}: ${path}: ` + String(err), { cause: err })
         }
     }
 
-    async get<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+    async get<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema, TSecurity extends RouteSecurity = undefined>(
         path: string,
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity> = {},
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>, SecurityLocals<THandlers, TSecurity>>
     ) {
         this.route(Doc.HttpMethods.GET, path, opts, handler, false);
     }
 
-    async delete<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+    async delete<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema, TSecurity extends RouteSecurity = undefined>(
         path: string,
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity> = {},
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>, SecurityLocals<THandlers, TSecurity>>
     ) {
         this.route(Doc.HttpMethods.DELETE, path, opts, handler, false);
     }
 
-    async post<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+    async post<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema, TSecurity extends RouteSecurity = undefined>(
         path: string,
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity> = {},
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>, SecurityLocals<THandlers, TSecurity>>
     ) {
         this.route(Doc.HttpMethods.POST, path, opts, handler, true);
     }
 
-    async patch<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+    async patch<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema, TSecurity extends RouteSecurity = undefined>(
         path: string,
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity> = {},
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>, SecurityLocals<THandlers, TSecurity>>
     ) {
         this.route(Doc.HttpMethods.PATCH, path, opts, handler, true);
     }
 
-    async put<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema>(
+    async put<TParams extends TSchema, TQuery extends TSchema, TBody extends TSchema, TResponse extends TSchema, TSecurity extends RouteSecurity = undefined>(
         path: string,
-        opts: RequestValidation<TParams, TQuery, TBody, TResponse> = {},
-        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>>
+        opts: RequestValidation<TParams, TQuery, TBody, TResponse, TSecurity> = {},
+        handler: RequestHandler<Static<TParams>, Static<TResponse>, Static<TBody>, Static<TQuery>, SecurityLocals<THandlers, TSecurity>>
     ) {
         this.route(Doc.HttpMethods.PUT, path, opts, handler, true);
     }

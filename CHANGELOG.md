@@ -12,6 +12,14 @@
 
 ### Pending Release
 
+### v10.31.0 - 2026-11-12
+
+- :rocket: Errors thrown by a body parser or a route handler are returned as a batch-error JSON body instead of Express's default HTML error page - unexpected errors become a 500 `Internal Server Error` without their message or stack
+- :rocket: Body parsers are applied per route instead of to the whole router, after the route's security handlers - an unauthorized request, or one to an unknown path, no longer has its body parsed. Routes added directly to `schema.router` must bring their own body parser
+- :tada: Add optional `securityHandlers` to enforce the documented `security` - one handler per security scheme, evaluated before validation against the route's Security Requirements (its own or the document level one) with the satisfied principals typed on `res.locals.auth`
+- :rocket: With `securityHandlers` set, a route naming an undocumented scheme, a scheme without a handler, or no `security` at all fails at registration
+- :tada: Add optional `logging.format` to set the morgan format name, format string, or format function - defaults to `combined`
+
 ### v10.30.0 - 2026-10-28
 
 - :tada: Enable the ajv `discriminator` keyword so a `oneOf` body with `discriminator: { propertyName }` validates only the matching branch. Without it `removeAdditional: 'all'` strips a body while evaluating the first `anyOf`/`oneOf` branch, so any later branch fails with spurious `required` errors

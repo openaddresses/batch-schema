@@ -109,7 +109,7 @@ export default class Docs {
                 responses: {}
             };
 
-            if (schemas.security) document.security = schemas.security;
+            if (schemas.security) document.security = schemas.security as Array<Doc.SecurityRequirementObject>;
 
             if (schemas.params && schemas.params.type === 'object') {
                 for (const name in (schemas.params.properties || {})) {
